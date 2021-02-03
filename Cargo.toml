@@ -1,0 +1,9 @@
+[package]
+name = "tchisla_solver"
+version = "0.1.0"
+authors = ["Xuan Yan <xuanyan@xuanyan.ws>"]
+edition = "2018"
+
+[dependencies]
+lazy_static = "1.4.0"
+num = "0.3.1"

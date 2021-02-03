@@ -1,0 +1,67 @@
+use std::env;
+use tchisla_solver::{IntegralSolver, Limits, QuadraticSolver, RationalSolver, Solver};
+
+fn parse_problem() -> Option<(i128, i128)> {
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 2 {
+        return None;
+    }
+    if let Some(index) = args[1].find('#') {
+        let target = args[1][..index].parse();
+        let n = args[1][(index + 1)..].parse();
+        if n.is_ok() && target.is_ok() {
+            Some((n.unwrap(), target.unwrap()))
+        } else {
+            None
+        }
+    } else {
+        None
+    }
+}
+
+fn main() {
+    if let Some((n, target)) = parse_problem() {
+        let mut max_depth = None;
+        let mut integral_solver = IntegralSolver::new(
+            n,
+            Limits {
+                max: 0x1_0000_0000_0000,
+                max_digits: 48,
+                max_factorial: 20,
+                max_quadratic_power: 2,
+            },
+        );
+        if let Some((expression, digits)) = integral_solver.solve(target, max_depth) {
+            println!("integral({}): {} = {}", digits, target, expression);
+            max_depth = Some(digits - 1);
+        }
+        let mut rational_solver = RationalSolver::new(
+            n,
+            Limits {
+                max: 0x1_0000_0000,
+                max_digits: 32,
+                max_factorial: 14,
+                max_quadratic_power: 2,
+            },
+        );
+        if let Some((expression, digits)) = rational_solver.solve(target, max_depth) {
+            println!("rational({}): {} = {}", digits, target, expression);
+            max_depth = Some(digits - 1);
+        }
+        let mut quadratic_solver = QuadraticSolver::new(
+            n,
+            Limits {
+                max: 0x100_0000,
+                max_digits: 24,
+                max_factorial: 14,
+                max_quadratic_power: 2,
+            },
+        );
+        if let Some((expression, digits)) = quadratic_solver.solve(target, max_depth) {
+            println!("quadratic({}): {} = {}", digits, target, expression);
+        }
+        if max_depth.is_none() {
+            println!("No solution found!");
+        }
+    }
+}
