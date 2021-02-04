@@ -51,9 +51,9 @@ fn main() {
         let mut quadratic_solver = QuadraticSolver::new(
             n,
             Limits {
-                max: 0x100_0000,
-                max_digits: 24,
-                max_factorial: 14,
+                max: 0x1000_0000,
+                max_digits: 28,
+                max_factorial: 11,
                 max_quadratic_power: 2,
             },
         );
