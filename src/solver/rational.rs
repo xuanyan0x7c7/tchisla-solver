@@ -1,7 +1,4 @@
-use crate::expression::{
-    expression_add, expression_divide, expression_multiply, expression_sqrt, expression_subtract,
-    Expression,
-};
+use crate::expression::*;
 use crate::number::Number;
 use crate::number_theory::try_sqrt;
 use crate::solver::base::{Limits, Solver, State};
@@ -299,10 +296,7 @@ impl Solver<Rational> for RationalSolver {
             z,
             x.digits + y.digits,
             expression_sqrt(
-                Rc::new(Expression::Power(
-                    x.expression.clone(),
-                    y.expression.clone(),
-                )),
+                expression_power(x.expression.clone(), y.expression.clone()),
                 sqrt_order,
             ),
         ) {
@@ -312,10 +306,10 @@ impl Solver<Rational> for RationalSolver {
                 z.inv(),
                 x.digits + y.digits,
                 expression_sqrt(
-                    Rc::new(Expression::Power(
+                    expression_power(
                         x.expression.clone(),
                         Rc::new(Expression::Negate(y.expression.clone())),
-                    )),
+                    ),
                     sqrt_order,
                 ),
             )

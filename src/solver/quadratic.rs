@@ -1,7 +1,4 @@
-use crate::expression::{
-    expression_add, expression_divide, expression_multiply, expression_sqrt, expression_subtract,
-    Expression,
-};
+use crate::expression::*;
 use crate::number::Number;
 use crate::quadratic::Quadratic;
 use crate::solver::base::{Limits, Solver, State};
@@ -309,10 +306,7 @@ impl Solver<Quadratic> for QuadraticSolver {
             z,
             x.digits + y.digits,
             expression_sqrt(
-                Rc::new(Expression::Power(
-                    x.expression.clone(),
-                    y.expression.clone(),
-                )),
+                expression_power(x.expression.clone(), y.expression.clone()),
                 sqrt_order,
             ),
         ) {
@@ -322,10 +316,10 @@ impl Solver<Quadratic> for QuadraticSolver {
                 z.inverse(),
                 x.digits + y.digits,
                 expression_sqrt(
-                    Rc::new(Expression::Power(
+                    expression_power(
                         x.expression.clone(),
                         Rc::new(Expression::Negate(y.expression.clone())),
-                    )),
+                    ),
                     sqrt_order,
                 ),
             )

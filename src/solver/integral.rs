@@ -1,7 +1,4 @@
-use crate::expression::{
-    expression_add, expression_divide, expression_multiply, expression_sqrt, expression_subtract,
-    Expression,
-};
+use crate::expression::*;
 use crate::number_theory::try_sqrt;
 use crate::solver::base::{Limits, Solver, State};
 use std::collections::HashMap;
@@ -281,10 +278,7 @@ impl Solver<i128> for IntegralSolver {
             x.number.pow(exponent),
             x.digits + y.digits,
             expression_sqrt(
-                Rc::new(Expression::Power(
-                    x.expression.clone(),
-                    y.expression.clone(),
-                )),
+                expression_power(x.expression.clone(), y.expression.clone()),
                 sqrt_order,
             ),
         )

@@ -198,6 +198,18 @@ pub fn expression_multiply<T: Number>(
     x: Rc<Expression<T>>,
     y: Rc<Expression<T>>,
 ) -> Rc<Expression<T>> {
+    if x.get_sqrt().is_some() && y.get_sqrt().is_some() {
+        let (x_base, x_order) = x.get_sqrt().unwrap();
+        let (y_base, y_order) = y.get_sqrt().unwrap();
+        let min_order = usize::min(*x_order, *y_order);
+        return expression_sqrt(
+            expression_multiply(
+                expression_sqrt(x_base.clone(), x_order - min_order),
+                expression_sqrt(y_base.clone(), y_order - min_order),
+            ),
+            min_order,
+        );
+    }
     let x0 = x.get_divide();
     let y0 = y.get_divide();
     if x0.is_some() && y0.is_some() {
@@ -230,6 +242,18 @@ pub fn expression_divide<T: Number>(
     x: Rc<Expression<T>>,
     y: Rc<Expression<T>>,
 ) -> Rc<Expression<T>> {
+    if x.get_sqrt().is_some() && y.get_sqrt().is_some() {
+        let (x_base, x_order) = x.get_sqrt().unwrap();
+        let (y_base, y_order) = y.get_sqrt().unwrap();
+        let min_order = usize::min(*x_order, *y_order);
+        return expression_sqrt(
+            expression_divide(
+                expression_sqrt(x_base.clone(), x_order - min_order),
+                expression_sqrt(y_base.clone(), y_order - min_order),
+            ),
+            min_order,
+        );
+    }
     if let Some((y1, y2)) = y.get_divide() {
         expression_multiply(x, Rc::new(Expression::Divide(y2.clone(), y1.clone())))
     } else if let Some((x1, x2)) = x.get_divide() {
@@ -239,6 +263,20 @@ pub fn expression_divide<T: Number>(
         ))
     } else {
         Rc::new(Expression::Divide(x, y))
+    }
+}
+
+pub fn expression_power<T: Number>(
+    x: Rc<Expression<T>>,
+    y: Rc<Expression<T>>,
+) -> Rc<Expression<T>> {
+    if let Some((x1, x2)) = x.get_power() {
+        Rc::new(Expression::Power(
+            x1.clone(),
+            expression_multiply(x2.clone(), y),
+        ))
+    } else {
+        Rc::new(Expression::Power(x, y))
     }
 }
 
