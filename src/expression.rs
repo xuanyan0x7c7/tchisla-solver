@@ -149,6 +149,82 @@ impl<T: Number> fmt::Display for Expression<T> {
     }
 }
 
+fn add_parens(x: String) -> String {
+    "\\left(".to_string() + &x + "\\right)"
+}
+
+fn fmt_latex_binary<T: Number>(
+    x: &Rc<Expression<T>>,
+    y: &Rc<Expression<T>>,
+    operator: &str,
+    precedence: i32,
+    abelian: bool,
+    rtl: bool,
+) -> String {
+    let lhs = if x.precedence() < precedence || (x.precedence() == precedence && rtl && !abelian) {
+        add_parens(x.to_latex_string())
+    } else {
+        x.to_string()
+    };
+    let rhs = if y.precedence() < precedence || (y.precedence() == precedence && !rtl && !abelian) {
+        add_parens(y.to_latex_string())
+    } else {
+        y.to_string()
+    };
+    lhs + operator + &rhs
+}
+
+impl<T: Number> Expression<T> {
+    pub fn to_latex_string(&self) -> String {
+        match self {
+            Expression::Number(x) => x.to_string(),
+            Expression::Negate(x) => match x.get_add().or(x.get_subtract()) {
+                Some(_) => "-".to_string() + &add_parens(x.to_latex_string()),
+                None => "-".to_string() + &x.to_latex_string(),
+            },
+            Expression::Add(x, y) => fmt_latex_binary(x, y, "+", self.precedence(), true, false),
+            Expression::Subtract(x, y) => {
+                fmt_latex_binary(x, y, "-", self.precedence(), false, false)
+            }
+            Expression::Multiply(x, y) => fmt_latex_binary(
+                x,
+                y,
+                if y.get_number().is_some() || x.get_factorial().is_some() {
+                    "\\times"
+                } else {
+                    ""
+                },
+                self.precedence(),
+                true,
+                false,
+            ),
+            Expression::Divide(x, y) => format!(
+                "\\frac{{{}}}{{{}}}",
+                x.to_latex_string(),
+                y.to_latex_string()
+            ),
+            Expression::Power(x, y) => format!(
+                "{}^{{{}}}",
+                if x.get_number().is_some() {
+                    x.to_latex_string()
+                } else {
+                    add_parens(x.to_latex_string())
+                },
+                y.to_latex_string()
+            ),
+            Expression::Sqrt(x, order) => {
+                "\\sqrt{".repeat(*order)
+                    + x.to_latex_string().as_str()
+                    + "}".repeat(*order).as_str()
+            }
+            Expression::Factorial(x) => match x.get_number() {
+                Some(_) => x.to_latex_string() + "!",
+                None => add_parens(x.to_latex_string()) + "!",
+            },
+        }
+    }
+}
+
 pub fn expression_add<T: Number>(x: Rc<Expression<T>>, y: Rc<Expression<T>>) -> Rc<Expression<T>> {
     let x0 = x.get_subtract();
     let y0 = y.get_subtract();
