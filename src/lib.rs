@@ -3,6 +3,7 @@ mod number;
 mod number_theory;
 mod quadratic;
 mod solver;
+mod wasm;
 
 pub use expression::Expression;
 pub use number::Number;
