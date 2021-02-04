@@ -4,7 +4,6 @@ use crate::number_theory::{factorial as fact, factorial_divide as fact_div};
 use std::rc::Rc;
 
 pub struct Limits {
-    pub max: i128,
     pub max_digits: usize,
     pub max_factorial: i128,
     pub max_quadratic_power: u8,

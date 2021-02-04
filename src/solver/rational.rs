@@ -165,7 +165,8 @@ impl Solver<Rational> for RationalSolver {
 
     #[inline]
     fn range_check(&self, x: Rational) -> bool {
-        *x.numer() <= self.limits.max && *x.denom() <= self.limits.max
+        let limit = 1i128 << self.limits.max_digits;
+        *x.numer() <= limit && *x.denom() <= limit
     }
 
     #[inline]

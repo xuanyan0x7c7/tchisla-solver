@@ -25,7 +25,6 @@ fn main() {
         let mut integral_solver = IntegralSolver::new(
             n,
             Limits {
-                max: 0x1_0000_0000_0000,
                 max_digits: 48,
                 max_factorial: 20,
                 max_quadratic_power: 2,
@@ -38,7 +37,6 @@ fn main() {
         let mut rational_solver = RationalSolver::new(
             n,
             Limits {
-                max: 0x1_0000_0000,
                 max_digits: 32,
                 max_factorial: 14,
                 max_quadratic_power: 2,
@@ -51,7 +49,6 @@ fn main() {
         let mut quadratic_solver = QuadraticSolver::new(
             n,
             Limits {
-                max: 0x1000_0000,
                 max_digits: 28,
                 max_factorial: 11,
                 max_quadratic_power: 2,

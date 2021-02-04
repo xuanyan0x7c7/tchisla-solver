@@ -161,8 +161,8 @@ impl Solver<Quadratic> for QuadraticSolver {
 
     #[inline]
     fn range_check(&self, x: Quadratic) -> bool {
-        *x.rational_part().numer() <= self.limits.max
-            && *x.rational_part().denom() <= self.limits.max
+        let limit = 1i128 << self.limits.max_digits as u32;
+        *x.rational_part().numer() <= limit && *x.rational_part().denom() <= limit
     }
 
     #[inline]

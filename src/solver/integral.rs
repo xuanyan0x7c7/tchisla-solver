@@ -159,7 +159,7 @@ impl Solver<i128> for IntegralSolver {
 
     #[inline]
     fn range_check(&self, x: i128) -> bool {
-        x <= self.limits.max
+        x <= 1i128 << self.limits.max_digits as u32
     }
 
     #[inline]
