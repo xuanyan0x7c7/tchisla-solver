@@ -187,14 +187,7 @@ impl<T: Number> Expression<T> {
                 fmt_latex_binary(x, y, "-", self.precedence(), false, false)
             }
             Expression::Multiply(x, y) => {
-                let y_string = y.to_latex_string();
-                let first_char = y_string.chars().nth(0).unwrap();
-                let operator = if first_char > '0' && first_char <= '9' {
-                    "\\times"
-                } else {
-                    ""
-                };
-                fmt_latex_binary(x, y, operator, self.precedence(), true, false)
+                fmt_latex_binary(x, y, "\\times", self.precedence(), true, false)
             }
             Expression::Divide(x, y) => format!(
                 "\\frac{{{}}}{{{}}}",
