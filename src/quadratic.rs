@@ -8,7 +8,7 @@ use std::fmt;
 
 type Rational = Ratio<i128>;
 
-const PRIMES: [i128; 4] = [2, 3, 5, 7];
+pub const PRIMES: [i128; 4] = [2, 3, 5, 7];
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct Quadratic {
@@ -311,19 +311,5 @@ impl Quadratic {
             quadratic_part,
             quadratic_power,
         })
-    }
-
-    pub fn log2(&self) -> f64 {
-        let mut result = f64::max(
-            *self.rational_part().numer() as f64,
-            *self.rational_part().denom() as f64,
-        )
-        .log2();
-        for (prime, power) in PRIMES.iter().zip(self.quadratic_part.iter()) {
-            if *power > 0 {
-                result += (*prime as f64).log2() * *power as f64 / self.quadratic_power as f64;
-            }
-        }
-        result
     }
 }

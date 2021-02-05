@@ -1,7 +1,8 @@
 use crate::expression::*;
 use crate::number::Number;
-use crate::quadratic::Quadratic;
+use crate::quadratic::{Quadratic, PRIMES};
 use crate::solver::base::{Limits, Solver, State};
+use num::traits::Pow;
 use num::Signed;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -11,6 +12,20 @@ struct ExtraState {
     origin_depth: usize,
     number: Quadratic,
     expression: Rc<Expression<Quadratic>>,
+}
+
+fn quadratic_digits(x: &Quadratic) -> f64 {
+    let mut result = f64::max(
+        *x.rational_part().numer() as f64,
+        *x.rational_part().denom() as f64,
+    )
+    .log2();
+    for (prime, power) in PRIMES.iter().zip(x.quadratic_part().iter()) {
+        if *power > 0 {
+            result += (*prime as f64).log2() * *power as f64 / 2f64.pow(x.quadratic_power());
+        }
+    }
+    result
 }
 
 pub struct QuadraticSolver {
@@ -291,7 +306,7 @@ impl Solver<Quadratic> for QuadraticSolver {
             return false;
         }
         let mut exponent = y_int as i32;
-        let x_digits = x.number.log2();
+        let x_digits = quadratic_digits(&x.number);
         let mut sqrt_order = 0usize;
         while x_digits * exponent as f64 > self.limits.max_digits as f64 {
             if exponent % 2 == 0 {
