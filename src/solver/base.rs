@@ -30,11 +30,54 @@ pub trait Solver<T: Number> {
     ) -> Option<(Rc<Expression<T>>, usize)>;
     fn search(&mut self, digits: usize) -> bool;
 
+    fn unary_operation(&mut self, x: State<T>) -> bool {
+        if self.n() == 1 || x.expression.get_divide().is_none() || !self.rational_check(x.number) {
+            return false;
+        }
+        let number = x.number;
+        let digits = x.digits;
+        let (expression_numerator, expression_denominator) = x.expression.get_divide().unwrap();
+        if is_single_digit(expression_denominator, self.n()) {
+            return self.division_diff_one(
+                number,
+                digits,
+                expression_numerator.clone(),
+                expression_denominator.clone(),
+            );
+        }
+        let mut lhs: &Rc<Expression<T>> = expression_denominator;
+        let mut rhs: Option<Rc<Expression<T>>> = None;
+        while let Some((p, q)) = lhs.get_multiply() {
+            lhs = p;
+            if is_single_digit(q, self.n()) {
+                return self.division_diff_one(
+                    number,
+                    digits,
+                    Expression::from_divide(
+                        expression_numerator.clone(),
+                        if let Some(r) = rhs.as_ref() {
+                            Expression::from_multiply(lhs.clone(), r.clone())
+                        } else {
+                            lhs.clone()
+                        },
+                    ),
+                    q.clone(),
+                );
+            }
+            rhs = if let Some(r) = rhs {
+                Some(Expression::from_multiply(q.clone(), r))
+            } else {
+                Some(q.clone())
+            };
+        }
+        false
+    }
+
     fn binary_operation(&mut self, x: State<T>, y: State<T>) -> bool {
-        self.add(&x, &y)
-            || self.sub(&x, &y)
+        self.div(&x, &y)
             || self.mul(&x, &y)
-            || self.div(&x, &y)
+            || self.add(&x, &y)
+            || self.sub(&x, &y)
             || self.pow(&x, &y)
             || self.pow(&y, &x)
             || self.factorial_divide(&x, &y)
@@ -63,17 +106,18 @@ pub trait Solver<T: Number> {
 
     fn range_check(&self, x: T) -> bool;
     fn integer_check(&self, x: T) -> bool;
+    fn rational_check(&self, x: T) -> bool;
 
     fn already_searched(&self, x: T) -> bool;
     fn insert(&mut self, x: T, digits: usize, expression: Rc<Expression<T>>) -> bool;
-    fn insert_extra(&mut self, x: T, depth: usize, digits: usize, expression: Expression<T>);
+    fn insert_extra(&mut self, x: T, depth: usize, digits: usize, expression: Rc<Expression<T>>);
 
     fn concat(&mut self, digits: usize) -> bool {
         if digits as f64 * 10f64.log2() - 9f64.log2() > self.get_max_digits() as f64 {
             return false;
         }
         let x = T::from_int((10i128.pow(digits as u32) - 1) / 9 * self.n());
-        self.check(x, digits, Rc::new(Expression::Number(x)))
+        self.check(x, digits, Expression::from_number(x))
     }
 
     fn add(&mut self, x: &State<T>, y: &State<T>) -> bool;
@@ -89,7 +133,7 @@ pub trait Solver<T: Number> {
                 self.check(
                     T::from_int(fact(n)),
                     x.digits,
-                    Rc::new(Expression::Factorial(x.expression.clone())),
+                    Expression::from_factorial(x.expression.clone()),
                 )
             } else {
                 false
@@ -128,62 +172,30 @@ pub trait Solver<T: Number> {
         {
             return false;
         }
-        let x_expression = Rc::new(Expression::Factorial(x.expression.clone()));
-        let y_expression = Rc::new(Expression::Factorial(y.expression.clone()));
-        let result = fact_div(x_int, y_int);
-        if self.check(
-            T::from_int(result),
+        let x_expression = Expression::from_factorial(x.expression.clone());
+        let y_expression = Expression::from_factorial(y.expression.clone());
+        self.check(
+            T::from_int(fact_div(x_int, y_int)),
             x.digits + y.digits,
-            Rc::new(Expression::Divide(
-                x_expression.clone(),
-                y_expression.clone(),
-            )),
-        ) {
-            return true;
-        }
-        if y.digits == 1 {
-            self.insert_extra(
-                T::from_int(result - 1),
-                x.digits + 1,
-                x.digits + 2,
-                Expression::Divide(
-                    Rc::new(Expression::Subtract(
-                        x_expression.clone(),
-                        y_expression.clone(),
-                    )),
-                    y_expression.clone(),
-                ),
-            );
-            self.insert_extra(
-                T::from_int(result + 1),
-                x.digits + 1,
-                x.digits + 2,
-                Expression::Divide(
-                    Rc::new(Expression::Add(x_expression.clone(), y_expression.clone())),
-                    y_expression.clone(),
-                ),
-            );
-            self.insert_extra(
-                T::from_int(result >> 1),
-                x.digits + 1,
-                x.digits + 2,
-                Expression::Divide(
-                    x_expression.clone(),
-                    Rc::new(Expression::Add(y_expression.clone(), y_expression.clone())),
-                ),
-            );
-        }
-        if x.digits == 1 {
-            self.insert_extra(
-                T::from_int(result << 1),
-                y.digits + 1,
-                y.digits + 2,
-                Expression::Divide(
-                    Rc::new(Expression::Add(x_expression.clone(), x_expression.clone())),
-                    y_expression.clone(),
-                ),
-            );
-        }
-        false
+            Expression::from_divide(x_expression.clone(), y_expression.clone()),
+        )
+    }
+
+    fn division_diff_one(
+        &mut self,
+        x: T,
+        digits: usize,
+        numerator: Rc<Expression<T>>,
+        denominator: Rc<Expression<T>>,
+    ) -> bool;
+}
+
+fn is_single_digit<T: Number>(expression: &Expression<T>, n: i128) -> bool {
+    match expression {
+        Expression::Number(x) => x.to_int() == Some(n),
+        Expression::Negate(x) => is_single_digit(x, n),
+        Expression::Sqrt(x, _) => is_single_digit(x, n),
+        Expression::Factorial(x) => is_single_digit(x, n),
+        _ => false,
     }
 }

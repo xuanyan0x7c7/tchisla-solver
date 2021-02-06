@@ -1,4 +1,4 @@
-use crate::expression::*;
+use crate::expression::Expression;
 use crate::number::Number;
 use crate::quadratic::{Quadratic, PRIMES};
 use crate::solver::base::{Limits, Solver, State};
@@ -119,6 +119,17 @@ impl Solver<Quadratic> for QuadraticSolver {
                 }
             }
         }
+        let l = self.states_by_depth[digits - 1].len();
+        for i in 0..l {
+            let number = self.states_by_depth[digits - 1][i];
+            if self.unary_operation(State {
+                digits,
+                number,
+                expression: self.states.get(&number).unwrap().clone(),
+            }) {
+                return true;
+            }
+        }
         for d1 in 1..((digits + 1) >> 1) {
             let d2 = digits - d1;
             let l1 = self.states_by_depth[d1].len();
@@ -186,6 +197,11 @@ impl Solver<Quadratic> for QuadraticSolver {
     }
 
     #[inline]
+    fn rational_check(&self, x: Quadratic) -> bool {
+        *x.quadratic_power() == 0
+    }
+
+    #[inline]
     fn already_searched(&self, x: Quadratic) -> bool {
         self.states.contains_key(&x)
     }
@@ -206,7 +222,7 @@ impl Solver<Quadratic> for QuadraticSolver {
         x: Quadratic,
         depth: usize,
         digits: usize,
-        expression: Expression<Quadratic>,
+        expression: Rc<Expression<Quadratic>>,
     ) {
         if digits > self.max_depth.unwrap_or(usize::MAX) {
             return;
@@ -217,7 +233,7 @@ impl Solver<Quadratic> for QuadraticSolver {
         self.extra_states_by_depth[digits].push(ExtraState {
             origin_depth: depth,
             number: x,
-            expression: Rc::new(expression),
+            expression,
         });
     }
 
@@ -226,7 +242,7 @@ impl Solver<Quadratic> for QuadraticSolver {
             self.check(
                 result,
                 x.digits + y.digits,
-                expression_add(x.expression.clone(), y.expression.clone()),
+                Expression::from_add(x.expression.clone(), y.expression.clone()),
             )
         } else {
             false
@@ -242,13 +258,13 @@ impl Solver<Quadratic> for QuadraticSolver {
                 self.check(
                     result.neg(),
                     x.digits + y.digits,
-                    expression_subtract(y.expression.clone(), x.expression.clone()),
+                    Expression::from_subtract(y.expression.clone(), x.expression.clone()),
                 )
             } else {
                 self.check(
                     result,
                     x.digits + y.digits,
-                    expression_subtract(x.expression.clone(), y.expression.clone()),
+                    Expression::from_subtract(x.expression.clone(), y.expression.clone()),
                 )
             }
         } else {
@@ -260,7 +276,7 @@ impl Solver<Quadratic> for QuadraticSolver {
         self.check(
             x.number.multiply(&y.number),
             x.digits + y.digits,
-            expression_multiply(x.expression.clone(), y.expression.clone()),
+            Expression::from_multiply(x.expression.clone(), y.expression.clone()),
         )
     }
 
@@ -270,7 +286,7 @@ impl Solver<Quadratic> for QuadraticSolver {
                 self.check(
                     Quadratic::from_int(1),
                     2,
-                    expression_divide(x.expression.clone(), x.expression.clone()),
+                    Expression::from_divide(x.expression.clone(), x.expression.clone()),
                 )
             } else {
                 false
@@ -281,7 +297,7 @@ impl Solver<Quadratic> for QuadraticSolver {
             if self.check(
                 z,
                 x.digits + y.digits,
-                expression_divide(x.expression.clone(), y.expression.clone()),
+                Expression::from_divide(x.expression.clone(), y.expression.clone()),
             ) {
                 return true;
             }
@@ -290,7 +306,7 @@ impl Solver<Quadratic> for QuadraticSolver {
             self.check(
                 z.inverse(),
                 x.digits + y.digits,
-                expression_divide(y.expression.clone(), x.expression.clone()),
+                Expression::from_divide(y.expression.clone(), x.expression.clone()),
             )
         } else {
             false
@@ -320,8 +336,8 @@ impl Solver<Quadratic> for QuadraticSolver {
         if self.check(
             z,
             x.digits + y.digits,
-            expression_sqrt(
-                expression_power(x.expression.clone(), y.expression.clone()),
+            Expression::from_sqrt(
+                Expression::from_power(x.expression.clone(), y.expression.clone()),
                 sqrt_order,
             ),
         ) {
@@ -330,10 +346,10 @@ impl Solver<Quadratic> for QuadraticSolver {
             self.check(
                 z.inverse(),
                 x.digits + y.digits,
-                expression_sqrt(
-                    expression_power(
+                Expression::from_sqrt(
+                    Expression::from_power(
                         x.expression.clone(),
-                        Rc::new(Expression::Negate(y.expression.clone())),
+                        Expression::from_negate(y.expression.clone()),
                     ),
                     sqrt_order,
                 ),
@@ -346,12 +362,56 @@ impl Solver<Quadratic> for QuadraticSolver {
     fn sqrt(&mut self, x: &State<Quadratic>) -> bool {
         if *x.number.quadratic_power() < self.limits.max_quadratic_power {
             if let Some(result) = x.number.sqrt() {
-                self.check(result, x.digits, expression_sqrt(x.expression.clone(), 1))
+                self.check(
+                    result,
+                    x.digits,
+                    Expression::from_sqrt(x.expression.clone(), 1),
+                )
             } else {
                 false
             }
         } else {
             false
         }
+    }
+
+    fn division_diff_one(
+        &mut self,
+        x: Quadratic,
+        digits: usize,
+        numerator: Rc<Expression<Quadratic>>,
+        denominator: Rc<Expression<Quadratic>>,
+    ) -> bool {
+        if x.rational_part().numer() < x.rational_part().denom() {
+            if self.check(
+                Quadratic::from_int(1).subtract(&x).unwrap(),
+                digits,
+                Expression::from_divide(
+                    Expression::from_subtract(denominator.clone(), numerator.clone()),
+                    denominator.clone(),
+                ),
+            ) {
+                return true;
+            }
+        } else if x.rational_part().numer() > x.rational_part().denom() {
+            if self.check(
+                x.subtract(&Quadratic::from_int(1)).unwrap(),
+                digits,
+                Expression::from_divide(
+                    Expression::from_subtract(numerator.clone(), denominator.clone()),
+                    denominator.clone(),
+                ),
+            ) {
+                return true;
+            }
+        }
+        self.check(
+            x.add(&Quadratic::from_int(1)).unwrap(),
+            digits,
+            Expression::from_divide(
+                Expression::from_add(numerator.clone(), denominator.clone()),
+                denominator.clone(),
+            ),
+        )
     }
 }

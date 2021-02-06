@@ -1,4 +1,4 @@
-use crate::expression::*;
+use crate::expression::Expression;
 use crate::number_theory::try_sqrt;
 use crate::solver::base::{Limits, Solver, State};
 use std::collections::HashMap;
@@ -102,6 +102,17 @@ impl Solver<i128> for IntegralSolver {
                 }
             }
         }
+        let l = self.states_by_depth[digits - 1].len();
+        for i in 0..l {
+            let number = self.states_by_depth[digits - 1][i];
+            if self.unary_operation(State {
+                digits,
+                number,
+                expression: self.states.get(&number).unwrap().clone(),
+            }) {
+                return true;
+            }
+        }
         for d1 in 1..((digits + 1) >> 1) {
             let d2 = digits - d1;
             let l1 = self.states_by_depth[d1].len();
@@ -168,6 +179,11 @@ impl Solver<i128> for IntegralSolver {
     }
 
     #[inline]
+    fn rational_check(&self, _: i128) -> bool {
+        true
+    }
+
+    #[inline]
     fn already_searched(&self, x: i128) -> bool {
         self.states.contains_key(&x)
     }
@@ -178,7 +194,13 @@ impl Solver<i128> for IntegralSolver {
         Some(x) == self.target
     }
 
-    fn insert_extra(&mut self, x: i128, depth: usize, digits: usize, expression: Expression<i128>) {
+    fn insert_extra(
+        &mut self,
+        x: i128,
+        depth: usize,
+        digits: usize,
+        expression: Rc<Expression<i128>>,
+    ) {
         if digits > self.max_depth.unwrap_or(usize::MAX) {
             return;
         }
@@ -188,7 +210,7 @@ impl Solver<i128> for IntegralSolver {
         self.extra_states_by_depth[digits].push(ExtraState {
             origin_depth: depth,
             number: x,
-            expression: Rc::new(expression),
+            expression,
         });
     }
 
@@ -196,7 +218,7 @@ impl Solver<i128> for IntegralSolver {
         self.check(
             x.number + y.number,
             x.digits + y.digits,
-            expression_add(x.expression.clone(), y.expression.clone()),
+            Expression::from_add(x.expression.clone(), y.expression.clone()),
         )
     }
 
@@ -214,7 +236,7 @@ impl Solver<i128> for IntegralSolver {
         self.check(
             x.number - y.number,
             x.digits + y.digits,
-            expression_subtract(x.expression.clone(), y.expression.clone()),
+            Expression::from_subtract(x.expression.clone(), y.expression.clone()),
         )
     }
 
@@ -222,7 +244,7 @@ impl Solver<i128> for IntegralSolver {
         self.check(
             x.number * y.number,
             x.digits + y.digits,
-            expression_multiply(x.expression.clone(), y.expression.clone()),
+            Expression::from_multiply(x.expression.clone(), y.expression.clone()),
         )
     }
 
@@ -232,7 +254,7 @@ impl Solver<i128> for IntegralSolver {
                 self.check(
                     1,
                     2,
-                    expression_divide(x.expression.clone(), x.expression.clone()),
+                    Expression::from_divide(x.expression.clone(), x.expression.clone()),
                 )
             } else {
                 false
@@ -249,7 +271,7 @@ impl Solver<i128> for IntegralSolver {
             self.check(
                 x.number / y.number,
                 x.digits + y.digits,
-                expression_divide(x.expression.clone(), y.expression.clone()),
+                Expression::from_divide(x.expression.clone(), y.expression.clone()),
             )
         } else {
             false
@@ -277,8 +299,8 @@ impl Solver<i128> for IntegralSolver {
         self.check(
             x.number.pow(exponent),
             x.digits + y.digits,
-            expression_sqrt(
-                expression_power(x.expression.clone(), y.expression.clone()),
+            Expression::from_sqrt(
+                Expression::from_power(x.expression.clone(), y.expression.clone()),
                 sqrt_order,
             ),
         )
@@ -286,9 +308,38 @@ impl Solver<i128> for IntegralSolver {
 
     fn sqrt(&mut self, x: &State<i128>) -> bool {
         if let Some(y) = try_sqrt(x.number) {
-            self.check(y, x.digits, expression_sqrt(x.expression.clone(), 1))
+            self.check(y, x.digits, Expression::from_sqrt(x.expression.clone(), 1))
         } else {
             false
         }
+    }
+
+    fn division_diff_one(
+        &mut self,
+        x: i128,
+        digits: usize,
+        numerator: Rc<Expression<i128>>,
+        denominator: Rc<Expression<i128>>,
+    ) -> bool {
+        if x > 1 {
+            if self.check(
+                x - 1,
+                digits,
+                Expression::from_divide(
+                    Expression::from_subtract(numerator.clone(), denominator.clone()),
+                    denominator.clone(),
+                ),
+            ) {
+                return true;
+            }
+        }
+        self.check(
+            x + 1,
+            digits,
+            Expression::from_divide(
+                Expression::from_add(numerator.clone(), denominator.clone()),
+                denominator.clone(),
+            ),
+        )
     }
 }
