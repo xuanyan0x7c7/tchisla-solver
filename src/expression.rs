@@ -214,145 +214,157 @@ impl<T: Number> Expression<T> {
             },
         }
     }
-}
 
-pub fn expression_add<T: Number>(x: Rc<Expression<T>>, y: Rc<Expression<T>>) -> Rc<Expression<T>> {
-    let x0 = x.get_subtract();
-    let y0 = y.get_subtract();
-    if x0.is_some() && y0.is_some() {
-        Rc::new(Expression::Subtract(
-            Rc::new(Expression::Add(
-                x0.unwrap().0.clone(),
-                y0.unwrap().0.clone(),
-            )),
-            Rc::new(Expression::Add(
+    pub fn from_number(x: T) -> Rc<Expression<T>> {
+        Rc::new(Expression::Number(x))
+    }
+
+    pub fn from_negate(x: Rc<Expression<T>>) -> Rc<Expression<T>> {
+        if let Some((y, z)) = x.get_subtract() {
+            Rc::new(Expression::Subtract(z.clone(), y.clone()))
+        } else {
+            Rc::new(Expression::Negate(x))
+        }
+    }
+
+    pub fn from_add(x: Rc<Expression<T>>, y: Rc<Expression<T>>) -> Rc<Expression<T>> {
+        let x0 = x.get_subtract();
+        let y0 = y.get_subtract();
+        if x0.is_some() && y0.is_some() {
+            Rc::new(Expression::Subtract(
+                Rc::new(Expression::Add(
+                    x0.unwrap().0.clone(),
+                    y0.unwrap().0.clone(),
+                )),
+                Rc::new(Expression::Add(
+                    x0.unwrap().1.clone(),
+                    y0.unwrap().1.clone(),
+                )),
+            ))
+        } else if x0.is_some() {
+            Rc::new(Expression::Subtract(
+                Rc::new(Expression::Add(x0.unwrap().0.clone(), y)),
                 x0.unwrap().1.clone(),
+            ))
+        } else if y0.is_some() {
+            Rc::new(Expression::Subtract(
+                Rc::new(Expression::Add(x, y0.unwrap().0.clone())),
                 y0.unwrap().1.clone(),
-            )),
-        ))
-    } else if x0.is_some() {
-        Rc::new(Expression::Subtract(
-            Rc::new(Expression::Add(x0.unwrap().0.clone(), y)),
-            x0.unwrap().1.clone(),
-        ))
-    } else if y0.is_some() {
-        Rc::new(Expression::Subtract(
-            Rc::new(Expression::Add(x, y0.unwrap().0.clone())),
-            y0.unwrap().1.clone(),
-        ))
-    } else {
-        Rc::new(Expression::Add(x, y))
+            ))
+        } else if let Some((y1, y2)) = y.get_add() {
+            Rc::new(Expression::Add(
+                Expression::from_add(x, y1.clone()),
+                y2.clone(),
+            ))
+        } else {
+            Rc::new(Expression::Add(x, y))
+        }
     }
-}
 
-pub fn expression_subtract<T: Number>(
-    x: Rc<Expression<T>>,
-    y: Rc<Expression<T>>,
-) -> Rc<Expression<T>> {
-    if let Some((y1, y2)) = y.get_subtract() {
-        expression_add(x, Rc::new(Expression::Subtract(y2.clone(), y1.clone())))
-    } else if let Some((x1, x2)) = x.get_subtract() {
-        Rc::new(Expression::Subtract(
-            x1.clone(),
-            Rc::new(Expression::Add(x2.clone(), y)),
-        ))
-    } else {
-        Rc::new(Expression::Subtract(x, y))
+    pub fn from_subtract(x: Rc<Expression<T>>, y: Rc<Expression<T>>) -> Rc<Expression<T>> {
+        if let Some((y1, y2)) = y.get_subtract() {
+            Expression::from_add(x, Rc::new(Expression::Subtract(y2.clone(), y1.clone())))
+        } else if let Some((x1, x2)) = x.get_subtract() {
+            Rc::new(Expression::Subtract(
+                x1.clone(),
+                Rc::new(Expression::Add(x2.clone(), y)),
+            ))
+        } else {
+            Rc::new(Expression::Subtract(x, y))
+        }
     }
-}
 
-pub fn expression_multiply<T: Number>(
-    x: Rc<Expression<T>>,
-    y: Rc<Expression<T>>,
-) -> Rc<Expression<T>> {
-    if x.get_sqrt().is_some() && y.get_sqrt().is_some() {
-        let (x_base, x_order) = x.get_sqrt().unwrap();
-        let (y_base, y_order) = y.get_sqrt().unwrap();
-        let min_order = usize::min(*x_order, *y_order);
-        return expression_sqrt(
-            expression_multiply(
-                expression_sqrt(x_base.clone(), x_order - min_order),
-                expression_sqrt(y_base.clone(), y_order - min_order),
-            ),
-            min_order,
-        );
-    }
-    let x0 = x.get_divide();
-    let y0 = y.get_divide();
-    if x0.is_some() && y0.is_some() {
-        Rc::new(Expression::Divide(
-            Rc::new(Expression::Multiply(
-                x0.unwrap().0.clone(),
-                y0.unwrap().0.clone(),
-            )),
-            Rc::new(Expression::Multiply(
+    pub fn from_multiply(x: Rc<Expression<T>>, y: Rc<Expression<T>>) -> Rc<Expression<T>> {
+        if x.get_sqrt().is_some() && y.get_sqrt().is_some() {
+            let (x_base, x_order) = x.get_sqrt().unwrap();
+            let (y_base, y_order) = y.get_sqrt().unwrap();
+            let min_order = usize::min(*x_order, *y_order);
+            return Expression::from_sqrt(
+                Expression::from_multiply(
+                    Expression::from_sqrt(x_base.clone(), x_order - min_order),
+                    Expression::from_sqrt(y_base.clone(), y_order - min_order),
+                ),
+                min_order,
+            );
+        }
+        let x0 = x.get_divide();
+        let y0 = y.get_divide();
+        if x0.is_some() && y0.is_some() {
+            Rc::new(Expression::Divide(
+                Rc::new(Expression::Multiply(
+                    x0.unwrap().0.clone(),
+                    y0.unwrap().0.clone(),
+                )),
+                Rc::new(Expression::Multiply(
+                    x0.unwrap().1.clone(),
+                    y0.unwrap().1.clone(),
+                )),
+            ))
+        } else if x0.is_some() {
+            Rc::new(Expression::Divide(
+                Rc::new(Expression::Multiply(x0.unwrap().0.clone(), y)),
                 x0.unwrap().1.clone(),
+            ))
+        } else if y0.is_some() {
+            Rc::new(Expression::Divide(
+                Rc::new(Expression::Multiply(x, y0.unwrap().0.clone())),
                 y0.unwrap().1.clone(),
-            )),
-        ))
-    } else if x0.is_some() {
-        Rc::new(Expression::Divide(
-            Rc::new(Expression::Multiply(x0.unwrap().0.clone(), y)),
-            x0.unwrap().1.clone(),
-        ))
-    } else if y0.is_some() {
-        Rc::new(Expression::Divide(
-            Rc::new(Expression::Multiply(x, y0.unwrap().0.clone())),
-            y0.unwrap().1.clone(),
-        ))
-    } else {
-        Rc::new(Expression::Multiply(x, y))
+            ))
+        } else if let Some((y1, y2)) = y.get_multiply() {
+            Rc::new(Expression::Multiply(
+                Expression::from_multiply(x, y1.clone()),
+                y2.clone(),
+            ))
+        } else {
+            Rc::new(Expression::Multiply(x, y))
+        }
     }
-}
 
-pub fn expression_divide<T: Number>(
-    x: Rc<Expression<T>>,
-    y: Rc<Expression<T>>,
-) -> Rc<Expression<T>> {
-    if x.get_sqrt().is_some() && y.get_sqrt().is_some() {
-        let (x_base, x_order) = x.get_sqrt().unwrap();
-        let (y_base, y_order) = y.get_sqrt().unwrap();
-        let min_order = usize::min(*x_order, *y_order);
-        return expression_sqrt(
-            expression_divide(
-                expression_sqrt(x_base.clone(), x_order - min_order),
-                expression_sqrt(y_base.clone(), y_order - min_order),
-            ),
-            min_order,
-        );
+    pub fn from_divide(x: Rc<Expression<T>>, y: Rc<Expression<T>>) -> Rc<Expression<T>> {
+        if let Some((y1, y2)) = y.get_divide() {
+            Expression::from_multiply(x, Rc::new(Expression::Divide(y2.clone(), y1.clone())))
+        } else if let Some((x1, x2)) = x.get_divide() {
+            Rc::new(Expression::Divide(
+                x1.clone(),
+                Rc::new(Expression::Multiply(x2.clone(), y)),
+            ))
+        } else {
+            Rc::new(Expression::Divide(x, y))
+        }
     }
-    if let Some((y1, y2)) = y.get_divide() {
-        expression_multiply(x, Rc::new(Expression::Divide(y2.clone(), y1.clone())))
-    } else if let Some((x1, x2)) = x.get_divide() {
-        Rc::new(Expression::Divide(
-            x1.clone(),
-            Rc::new(Expression::Multiply(x2.clone(), y)),
-        ))
-    } else {
-        Rc::new(Expression::Divide(x, y))
-    }
-}
 
-pub fn expression_power<T: Number>(
-    x: Rc<Expression<T>>,
-    y: Rc<Expression<T>>,
-) -> Rc<Expression<T>> {
-    if let Some((x1, x2)) = x.get_power() {
-        Rc::new(Expression::Power(
-            x1.clone(),
-            expression_multiply(x2.clone(), y),
-        ))
-    } else {
-        Rc::new(Expression::Power(x, y))
+    pub fn from_power(x: Rc<Expression<T>>, y: Rc<Expression<T>>) -> Rc<Expression<T>> {
+        if let Some((x1, x2)) = x.get_power() {
+            Rc::new(Expression::Power(
+                x1.clone(),
+                Expression::from_multiply(x2.clone(), y),
+            ))
+        } else if let Some((x0, order)) = x.get_sqrt() {
+            Rc::new(Expression::Sqrt(
+                Expression::from_power(x0.clone(), y),
+                *order,
+            ))
+        } else {
+            Rc::new(Expression::Power(x, y))
+        }
     }
-}
 
-pub fn expression_sqrt<T: Number>(x: Rc<Expression<T>>, order: usize) -> Rc<Expression<T>> {
-    if order == 0 {
-        x
-    } else if let Some((y, z)) = x.get_sqrt() {
-        Rc::new(Expression::Sqrt(y.clone(), z + order))
-    } else {
-        Rc::new(Expression::Sqrt(x, order))
+    pub fn from_sqrt(x: Rc<Expression<T>>, order: usize) -> Rc<Expression<T>> {
+        if order == 0 {
+            x
+        } else if let Some((y, z)) = x.get_sqrt() {
+            Rc::new(Expression::Sqrt(y.clone(), z + order))
+        } else if let Some((y, z)) = x.get_divide() {
+            Rc::new(Expression::Divide(
+                Rc::new(Expression::Sqrt(y.clone(), order)),
+                Rc::new(Expression::Sqrt(z.clone(), order)),
+            ))
+        } else {
+            Rc::new(Expression::Sqrt(x, order))
+        }
+    }
+
+    pub fn from_factorial(x: Rc<Expression<T>>) -> Rc<Expression<T>> {
+        Rc::new(Expression::Factorial(x))
     }
 }
