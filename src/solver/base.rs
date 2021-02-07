@@ -36,16 +36,16 @@ pub trait Solver<T: Number> {
         if !self.need_unary_operation(&x) {
             return false;
         }
-        let (expression_numerator, expression_denominator) = x.expression.get_divide().unwrap();
-        if is_single_digit(expression_denominator) {
+        let (numerator, denominator) = x.expression.get_divide().unwrap();
+        if is_single_digit(denominator) {
             return self.division_diff_one(
                 x.number,
                 x.digits,
-                expression_numerator.clone(),
-                expression_denominator.clone(),
+                numerator.clone(),
+                denominator.clone(),
             );
         }
-        let mut lhs: &Rc<Expression<T>> = expression_denominator;
+        let mut lhs: &Rc<Expression<T>> = denominator;
         let mut rhs: Option<Rc<Expression<T>>> = None;
         while let Some((p, q)) = lhs.get_multiply() {
             lhs = p;
@@ -54,7 +54,7 @@ pub trait Solver<T: Number> {
                     x.number,
                     x.digits,
                     Expression::from_divide(
-                        expression_numerator.clone(),
+                        numerator.clone(),
                         if let Some(r) = rhs.as_ref() {
                             Expression::from_multiply(lhs.clone(), r.clone())
                         } else {
@@ -83,17 +83,21 @@ pub trait Solver<T: Number> {
             || self.factorial_divide(&x, &y)
     }
 
-    fn check(&mut self, x: T, digits: usize, expression: Rc<Expression<T>>) -> bool {
+    fn check<F>(&mut self, x: T, digits: usize, expression_fn: F) -> bool
+    where
+        F: FnOnce() -> Rc<Expression<T>>,
+    {
         if !self.range_check(x) || self.already_searched(x) {
             return false;
         }
+        let expression = expression_fn();
         if self.insert(x, digits, expression.clone()) {
             return true;
         }
         let state = State {
             digits,
             number: x,
-            expression: expression.clone(),
+            expression,
         };
         if self.sqrt(&state) {
             true
@@ -117,7 +121,7 @@ pub trait Solver<T: Number> {
             return false;
         }
         let x = T::from_int((10i128.pow(digits as u32) - 1) / 9 * self.n());
-        self.check(x, digits, Expression::from_number(x))
+        self.check(x, digits, || Expression::from_number(x))
     }
 
     fn add(&mut self, x: &State<T>, y: &State<T>) -> bool;
@@ -130,11 +134,9 @@ pub trait Solver<T: Number> {
     fn factorial(&mut self, x: &State<T>) -> bool {
         if let Some(n) = x.number.to_int() {
             if n < self.get_max_factorial_limit() as i128 {
-                self.check(
-                    T::from_int(fact(n)),
-                    x.digits,
-                    Expression::from_factorial(x.expression.clone()),
-                )
+                self.check(T::from_int(fact(n)), x.digits, || {
+                    Expression::from_factorial(x.expression.clone())
+                })
             } else {
                 false
             }
@@ -177,7 +179,7 @@ pub trait Solver<T: Number> {
         self.check(
             T::from_int(fact_div(x_int, y_int)),
             x.digits + y.digits,
-            Expression::from_divide(x_expression.clone(), y_expression.clone()),
+            || Expression::from_divide(x_expression.clone(), y_expression.clone()),
         )
     }
 

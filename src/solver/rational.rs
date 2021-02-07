@@ -103,7 +103,7 @@ impl Solver<Rational> for RationalSolver {
             let l = self.extra_states_by_depth[digits].len();
             for i in 0..l {
                 let state = self.extra_states_by_depth[digits][i].clone();
-                if self.check(state.number, digits, state.expression) {
+                if self.check(state.number, digits, || state.expression) {
                     return true;
                 }
             }
@@ -239,11 +239,9 @@ impl Solver<Rational> for RationalSolver {
     }
 
     fn add(&mut self, x: &State<Rational>, y: &State<Rational>) -> bool {
-        self.check(
-            x.number + y.number,
-            x.digits + y.digits,
-            Expression::from_add(x.expression.clone(), y.expression.clone()),
-        )
+        self.check(x.number + y.number, x.digits + y.digits, || {
+            Expression::from_add(x.expression.clone(), y.expression.clone())
+        })
     }
 
     fn sub(&mut self, x: &State<Rational>, y: &State<Rational>) -> bool {
@@ -251,56 +249,44 @@ impl Solver<Rational> for RationalSolver {
         if result.is_zero() {
             false
         } else if result.is_negative() {
-            self.check(
-                -result,
-                x.digits + y.digits,
-                Expression::from_subtract(y.expression.clone(), x.expression.clone()),
-            )
+            self.check(-result, x.digits + y.digits, || {
+                Expression::from_subtract(y.expression.clone(), x.expression.clone())
+            })
         } else {
-            self.check(
-                result,
-                x.digits + y.digits,
-                Expression::from_subtract(x.expression.clone(), y.expression.clone()),
-            )
+            self.check(result, x.digits + y.digits, || {
+                Expression::from_subtract(x.expression.clone(), y.expression.clone())
+            })
         }
     }
 
     fn mul(&mut self, x: &State<Rational>, y: &State<Rational>) -> bool {
-        self.check(
-            x.number * y.number,
-            x.digits + y.digits,
-            Expression::from_multiply(x.expression.clone(), y.expression.clone()),
-        )
+        self.check(x.number * y.number, x.digits + y.digits, || {
+            Expression::from_multiply(x.expression.clone(), y.expression.clone())
+        })
     }
 
     fn div(&mut self, x: &State<Rational>, y: &State<Rational>) -> bool {
         if x.number == y.number {
             return if x.number.to_int() == Some(self.n) {
-                self.check(
-                    Rational::one(),
-                    2,
-                    Expression::from_divide(x.expression.clone(), x.expression.clone()),
-                )
+                self.check(Rational::one(), 2, || {
+                    Expression::from_divide(x.expression.clone(), x.expression.clone())
+                })
             } else {
                 false
             };
         }
         let z = x.number / y.number;
         if y.expression.get_divide().is_none() {
-            if self.check(
-                z,
-                x.digits + y.digits,
-                Expression::from_divide(x.expression.clone(), y.expression.clone()),
-            ) {
+            if self.check(z, x.digits + y.digits, || {
+                Expression::from_divide(x.expression.clone(), y.expression.clone())
+            }) {
                 return true;
             }
         }
         if x.expression.get_divide().is_none() {
-            self.check(
-                z.inv(),
-                x.digits + y.digits,
-                Expression::from_divide(y.expression.clone(), x.expression.clone()),
-            )
+            self.check(z.inv(), x.digits + y.digits, || {
+                Expression::from_divide(y.expression.clone(), x.expression.clone())
+            })
         } else {
             false
         }
@@ -325,27 +311,23 @@ impl Solver<Rational> for RationalSolver {
             }
         }
         let z = x.number.pow(exponent);
-        if self.check(
-            z,
-            x.digits + y.digits,
+        if self.check(z, x.digits + y.digits, || {
             Expression::from_sqrt(
                 Expression::from_power(x.expression.clone(), y.expression.clone()),
                 sqrt_order,
-            ),
-        ) {
+            )
+        }) {
             true
         } else if x.expression.get_divide().is_none() {
-            self.check(
-                z.inv(),
-                x.digits + y.digits,
+            self.check(z.inv(), x.digits + y.digits, || {
                 Expression::from_sqrt(
                     Expression::from_power(
                         x.expression.clone(),
                         Expression::from_negate(y.expression.clone()),
                     ),
                     sqrt_order,
-                ),
-            )
+                )
+            })
         } else {
             false
         }
@@ -354,11 +336,9 @@ impl Solver<Rational> for RationalSolver {
     fn sqrt(&mut self, x: &State<Rational>) -> bool {
         if let Some(p) = try_sqrt(*x.number.numer()) {
             if let Some(q) = try_sqrt(*x.number.denom()) {
-                self.check(
-                    Rational::new_raw(p, q),
-                    x.digits,
-                    Expression::from_sqrt(x.expression.clone(), 1),
-                )
+                self.check(Rational::new_raw(p, q), x.digits, || {
+                    Expression::from_sqrt(x.expression.clone(), 1)
+                })
             } else {
                 false
             }
@@ -375,35 +355,29 @@ impl Solver<Rational> for RationalSolver {
         denominator: Rc<Expression<Rational>>,
     ) -> bool {
         if x.numer() < x.denom() {
-            if self.check(
-                Rational::one() - x,
-                digits,
+            if self.check(Rational::one() - x, digits, || {
                 Expression::from_divide(
                     Expression::from_subtract(denominator.clone(), numerator.clone()),
                     denominator.clone(),
-                ),
-            ) {
+                )
+            }) {
                 return true;
             }
         } else if x.numer() > x.denom() {
-            if self.check(
-                x - 1,
-                digits,
+            if self.check(x - 1, digits, || {
                 Expression::from_divide(
                     Expression::from_subtract(numerator.clone(), denominator.clone()),
                     denominator.clone(),
-                ),
-            ) {
+                )
+            }) {
                 return true;
             }
         }
-        self.check(
-            x + 1,
-            digits,
+        self.check(x + 1, digits, || {
             Expression::from_divide(
                 Expression::from_add(numerator.clone(), denominator.clone()),
                 denominator.clone(),
-            ),
-        )
+            )
+        })
     }
 }

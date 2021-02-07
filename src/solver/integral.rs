@@ -97,7 +97,7 @@ impl Solver<i128> for IntegralSolver {
             let l = self.extra_states_by_depth[digits].len();
             for i in 0..l {
                 let state = self.extra_states_by_depth[digits][i].clone();
-                if self.check(state.number, digits, state.expression) {
+                if self.check(state.number, digits, || state.expression) {
                     return true;
                 }
             }
@@ -219,11 +219,9 @@ impl Solver<i128> for IntegralSolver {
     }
 
     fn add(&mut self, x: &State<i128>, y: &State<i128>) -> bool {
-        self.check(
-            x.number + y.number,
-            x.digits + y.digits,
-            Expression::from_add(x.expression.clone(), y.expression.clone()),
-        )
+        self.check(x.number + y.number, x.digits + y.digits, || {
+            Expression::from_add(x.expression.clone(), y.expression.clone())
+        })
     }
 
     fn sub(&mut self, x: &State<i128>, y: &State<i128>) -> bool {
@@ -237,29 +235,23 @@ impl Solver<i128> for IntegralSolver {
             x = y;
             y = temp;
         }
-        self.check(
-            x.number - y.number,
-            x.digits + y.digits,
-            Expression::from_subtract(x.expression.clone(), y.expression.clone()),
-        )
+        self.check(x.number - y.number, x.digits + y.digits, || {
+            Expression::from_subtract(x.expression.clone(), y.expression.clone())
+        })
     }
 
     fn mul(&mut self, x: &State<i128>, y: &State<i128>) -> bool {
-        self.check(
-            x.number * y.number,
-            x.digits + y.digits,
-            Expression::from_multiply(x.expression.clone(), y.expression.clone()),
-        )
+        self.check(x.number * y.number, x.digits + y.digits, || {
+            Expression::from_multiply(x.expression.clone(), y.expression.clone())
+        })
     }
 
     fn div(&mut self, x: &State<i128>, y: &State<i128>) -> bool {
         if x.number == y.number {
             return if x.number == self.n {
-                self.check(
-                    1,
-                    2,
-                    Expression::from_divide(x.expression.clone(), x.expression.clone()),
-                )
+                self.check(1, 2, || {
+                    Expression::from_divide(x.expression.clone(), x.expression.clone())
+                })
             } else {
                 false
             };
@@ -272,11 +264,9 @@ impl Solver<i128> for IntegralSolver {
             y = temp;
         }
         if x.number % y.number == 0 {
-            self.check(
-                x.number / y.number,
-                x.digits + y.digits,
-                Expression::from_divide(x.expression.clone(), y.expression.clone()),
-            )
+            self.check(x.number / y.number, x.digits + y.digits, || {
+                Expression::from_divide(x.expression.clone(), y.expression.clone())
+            })
         } else {
             false
         }
@@ -300,19 +290,19 @@ impl Solver<i128> for IntegralSolver {
                 return false;
             }
         }
-        self.check(
-            x.number.pow(exponent),
-            x.digits + y.digits,
+        self.check(x.number.pow(exponent), x.digits + y.digits, || {
             Expression::from_sqrt(
                 Expression::from_power(x.expression.clone(), y.expression.clone()),
                 sqrt_order,
-            ),
-        )
+            )
+        })
     }
 
     fn sqrt(&mut self, x: &State<i128>) -> bool {
         if let Some(y) = try_sqrt(x.number) {
-            self.check(y, x.digits, Expression::from_sqrt(x.expression.clone(), 1))
+            self.check(y, x.digits, || {
+                Expression::from_sqrt(x.expression.clone(), 1)
+            })
         } else {
             false
         }
@@ -326,24 +316,20 @@ impl Solver<i128> for IntegralSolver {
         denominator: Rc<Expression<i128>>,
     ) -> bool {
         if x > 1 {
-            if self.check(
-                x - 1,
-                digits,
+            if self.check(x - 1, digits, || {
                 Expression::from_divide(
                     Expression::from_subtract(numerator.clone(), denominator.clone()),
                     denominator.clone(),
-                ),
-            ) {
+                )
+            }) {
                 return true;
             }
         }
-        self.check(
-            x + 1,
-            digits,
+        self.check(x + 1, digits, || {
             Expression::from_divide(
                 Expression::from_add(numerator.clone(), denominator.clone()),
                 denominator.clone(),
-            ),
-        )
+            )
+        })
     }
 }
