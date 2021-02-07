@@ -4,7 +4,7 @@ use crate::number_theory::try_sqrt;
 use crate::solver::base::{Limits, Solver, State};
 use num::rational::Ratio;
 use num::traits::Inv;
-use num::{One, Signed};
+use num::{One, Signed, Zero};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -174,6 +174,23 @@ impl Solver<Rational> for RationalSolver {
         false
     }
 
+    fn need_unary_operation(&self, x: &State<Rational>) -> bool {
+        self.n != 1 && x.number.to_int() != Some(1) && x.expression.get_divide().is_some()
+    }
+
+    fn binary_operation(&mut self, x: State<Rational>, y: State<Rational>) -> bool {
+        if self.div(&x, &y) || self.mul(&x, &y) || self.add(&x, &y) || self.sub(&x, &y) {
+            return true;
+        }
+        if y.number.is_integer() && self.pow(&x, &y) {
+            return true;
+        }
+        if x.number.is_integer() && self.pow(&y, &x) {
+            return true;
+        }
+        x.number.is_integer() && y.number.is_integer() && self.factorial_divide(&x, &y)
+    }
+
     #[inline]
     fn range_check(&self, x: Rational) -> bool {
         let limit = 1i128 << self.limits.max_digits;
@@ -230,19 +247,18 @@ impl Solver<Rational> for RationalSolver {
     }
 
     fn sub(&mut self, x: &State<Rational>, y: &State<Rational>) -> bool {
-        if x.number == y.number {
-            return false;
-        }
-        let z = x.number - y.number;
-        if z.is_negative() {
+        let result = x.number - y.number;
+        if result.is_zero() {
+            false
+        } else if result.is_negative() {
             self.check(
-                -z,
+                -result,
                 x.digits + y.digits,
                 Expression::from_subtract(y.expression.clone(), x.expression.clone()),
             )
         } else {
             self.check(
-                z,
+                result,
                 x.digits + y.digits,
                 Expression::from_subtract(x.expression.clone(), y.expression.clone()),
             )
@@ -291,7 +307,7 @@ impl Solver<Rational> for RationalSolver {
     }
 
     fn pow(&mut self, x: &State<Rational>, y: &State<Rational>) -> bool {
-        if x.number.is_one() || !y.number.denom().is_one() {
+        if x.number.is_one() || y.number.is_one() {
             return false;
         }
         let x_digits = f64::max(*x.number.numer() as f64, *x.number.denom() as f64).log2();

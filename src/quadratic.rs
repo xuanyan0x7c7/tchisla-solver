@@ -77,7 +77,7 @@ impl Quadratic {
         &self.quadratic_power
     }
 
-    pub fn neg(self) -> Quadratic {
+    pub fn negate(self) -> Quadratic {
         Quadratic {
             rational_part: -self.rational_part,
             quadratic_part: self.quadratic_part,
@@ -85,7 +85,31 @@ impl Quadratic {
         }
     }
 
-    pub fn add(&self, rhs: &Quadratic) -> Option<Quadratic> {
+    pub fn abs(self) -> Quadratic {
+        Quadratic {
+            rational_part: self.rational_part.abs(),
+            quadratic_part: self.quadratic_part,
+            quadratic_power: self.quadratic_power,
+        }
+    }
+
+    pub fn add(&self, rhs: &Quadratic) -> Quadratic {
+        Quadratic {
+            rational_part: self.rational_part + rhs.rational_part,
+            quadratic_part: self.quadratic_part,
+            quadratic_power: self.quadratic_power,
+        }
+    }
+
+    pub fn add_integer(&self, rhs: i128) -> Quadratic {
+        Quadratic {
+            rational_part: self.rational_part + Rational::from_integer(rhs),
+            quadratic_part: self.quadratic_part,
+            quadratic_power: self.quadratic_power,
+        }
+    }
+
+    pub fn try_add(&self, rhs: &Quadratic) -> Option<Quadratic> {
         if self.quadratic_power == rhs.quadratic_power && self.quadratic_part == rhs.quadratic_part
         {
             Some(Quadratic {
@@ -98,7 +122,23 @@ impl Quadratic {
         }
     }
 
-    pub fn subtract(&self, rhs: &Quadratic) -> Option<Quadratic> {
+    pub fn subtract(&self, rhs: &Quadratic) -> Quadratic {
+        Quadratic {
+            rational_part: self.rational_part - rhs.rational_part,
+            quadratic_part: self.quadratic_part,
+            quadratic_power: self.quadratic_power,
+        }
+    }
+
+    pub fn subtract_integer(&self, rhs: i128) -> Quadratic {
+        Quadratic {
+            rational_part: self.rational_part - Rational::from_integer(rhs),
+            quadratic_part: self.quadratic_part,
+            quadratic_power: self.quadratic_power,
+        }
+    }
+
+    pub fn try_subtract(&self, rhs: &Quadratic) -> Option<Quadratic> {
         if self.quadratic_power == rhs.quadratic_power && self.quadratic_part == rhs.quadratic_part
         {
             Some(Quadratic {
@@ -261,7 +301,7 @@ impl Quadratic {
         }
     }
 
-    pub fn sqrt(&self) -> Option<Quadratic> {
+    pub fn try_sqrt(&self) -> Option<Quadratic> {
         if self.rational_part.is_zero() {
             return Some(*self);
         } else if self.rational_part.is_negative() {

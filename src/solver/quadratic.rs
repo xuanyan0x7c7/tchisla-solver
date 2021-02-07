@@ -3,7 +3,7 @@ use crate::number::Number;
 use crate::quadratic::{Quadratic, PRIMES};
 use crate::solver::base::{Limits, Solver, State};
 use num::traits::Pow;
-use num::Signed;
+use num::{Signed, Zero};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -185,6 +185,32 @@ impl Solver<Quadratic> for QuadraticSolver {
         false
     }
 
+    fn need_unary_operation(&self, x: &State<Quadratic>) -> bool {
+        self.n != 1
+            && *x.number.quadratic_power() == 0
+            && x.number.to_int() != Some(1)
+            && x.expression.get_divide().is_some()
+    }
+
+    fn binary_operation(&mut self, x: State<Quadratic>, y: State<Quadratic>) -> bool {
+        if self.div(&x, &y) || self.mul(&x, &y) {
+            return true;
+        }
+        if x.number.quadratic_power() == y.number.quadratic_power()
+            && x.number.quadratic_part() == y.number.quadratic_part()
+            && (self.add(&x, &y) || self.sub(&x, &y))
+        {
+            return true;
+        }
+        if y.number.to_int().is_some() && self.pow(&x, &y) {
+            return true;
+        }
+        if x.number.to_int().is_some() && self.pow(&y, &x) {
+            return true;
+        }
+        x.number.to_int().is_some() && y.number.to_int().is_some() && self.factorial_divide(&x, &y)
+    }
+
     #[inline]
     fn range_check(&self, x: Quadratic) -> bool {
         let limit = 1i128 << self.limits.max_digits as u32;
@@ -238,37 +264,29 @@ impl Solver<Quadratic> for QuadraticSolver {
     }
 
     fn add(&mut self, x: &State<Quadratic>, y: &State<Quadratic>) -> bool {
-        if let Some(result) = x.number.add(&y.number) {
-            self.check(
-                result,
-                x.digits + y.digits,
-                Expression::from_add(x.expression.clone(), y.expression.clone()),
-            )
-        } else {
-            false
-        }
+        self.check(
+            x.number.add(&y.number),
+            x.digits + y.digits,
+            Expression::from_add(x.expression.clone(), y.expression.clone()),
+        )
     }
 
     fn sub(&mut self, x: &State<Quadratic>, y: &State<Quadratic>) -> bool {
-        if x.number == y.number {
-            return false;
-        }
-        if let Some(result) = x.number.subtract(&y.number) {
-            if result.rational_part().is_negative() {
-                self.check(
-                    result.neg(),
-                    x.digits + y.digits,
-                    Expression::from_subtract(y.expression.clone(), x.expression.clone()),
-                )
-            } else {
-                self.check(
-                    result,
-                    x.digits + y.digits,
-                    Expression::from_subtract(x.expression.clone(), y.expression.clone()),
-                )
-            }
-        } else {
+        let result = x.number.subtract(&y.number);
+        if result.rational_part().is_zero() {
             false
+        } else if result.rational_part().is_negative() {
+            self.check(
+                result.negate(),
+                x.digits + y.digits,
+                Expression::from_subtract(y.expression.clone(), x.expression.clone()),
+            )
+        } else {
+            self.check(
+                result,
+                x.digits + y.digits,
+                Expression::from_subtract(x.expression.clone(), y.expression.clone()),
+            )
         }
     }
 
@@ -314,11 +332,11 @@ impl Solver<Quadratic> for QuadraticSolver {
     }
 
     fn pow(&mut self, x: &State<Quadratic>, y: &State<Quadratic>) -> bool {
-        if x.number.to_int() == Some(1) || y.number.to_int().is_none() {
+        if x.number.to_int() == Some(1) {
             return false;
         }
         let y_int = y.number.to_int().unwrap();
-        if y_int > 0x40000000 {
+        if y_int == 1 || y_int > 0x40000000 {
             return false;
         }
         let mut exponent = y_int as i32;
@@ -361,7 +379,7 @@ impl Solver<Quadratic> for QuadraticSolver {
 
     fn sqrt(&mut self, x: &State<Quadratic>) -> bool {
         if *x.number.quadratic_power() < self.limits.max_quadratic_power {
-            if let Some(result) = x.number.sqrt() {
+            if let Some(result) = x.number.try_sqrt() {
                 self.check(
                     result,
                     x.digits,
@@ -384,7 +402,7 @@ impl Solver<Quadratic> for QuadraticSolver {
     ) -> bool {
         if x.rational_part().numer() < x.rational_part().denom() {
             if self.check(
-                Quadratic::from_int(1).subtract(&x).unwrap(),
+                x.subtract_integer(1).negate(),
                 digits,
                 Expression::from_divide(
                     Expression::from_subtract(denominator.clone(), numerator.clone()),
@@ -395,7 +413,7 @@ impl Solver<Quadratic> for QuadraticSolver {
             }
         } else if x.rational_part().numer() > x.rational_part().denom() {
             if self.check(
-                x.subtract(&Quadratic::from_int(1)).unwrap(),
+                x.subtract_integer(1),
                 digits,
                 Expression::from_divide(
                     Expression::from_subtract(numerator.clone(), denominator.clone()),
@@ -406,7 +424,7 @@ impl Solver<Quadratic> for QuadraticSolver {
             }
         }
         self.check(
-            x.add(&Quadratic::from_int(1)).unwrap(),
+            x.add_integer(1),
             digits,
             Expression::from_divide(
                 Expression::from_add(numerator.clone(), denominator.clone()),

@@ -21,6 +21,10 @@ pub fn try_sqrt(n: i128) -> Option<i128> {
     } else if n < 0 {
         return None;
     }
+    if n <= 1i128 << 64 {
+        let m = ((n as f64).sqrt() + 0.5) as i128;
+        return if m * m == n { Some(m) } else { None };
+    }
     let m = (n % (11 * 63 * 64 * 65) as i128) as usize;
     if !SQUARES_MOD_64[m % 64]
         || !SQUARES_MOD_63[m % 63]
@@ -29,7 +33,7 @@ pub fn try_sqrt(n: i128) -> Option<i128> {
     {
         return None;
     }
-    let mut x = (n as f64).sqrt() as i128;
+    let mut x = ((n as f64).sqrt() + 0.5) as i128;
     x = (x + n / x) / 2;
     loop {
         let y = (x + n / x) / 2;

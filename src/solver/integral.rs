@@ -168,6 +168,10 @@ impl Solver<i128> for IntegralSolver {
         false
     }
 
+    fn need_unary_operation(&self, x: &State<i128>) -> bool {
+        self.n != 1 && x.number != 1 && x.expression.get_divide().is_some()
+    }
+
     #[inline]
     fn range_check(&self, x: i128) -> bool {
         x <= 1i128 << self.limits.max_digits as u32

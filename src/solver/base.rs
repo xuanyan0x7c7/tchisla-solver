@@ -30,17 +30,17 @@ pub trait Solver<T: Number> {
     ) -> Option<(Rc<Expression<T>>, usize)>;
     fn search(&mut self, digits: usize) -> bool;
 
+    fn need_unary_operation(&self, x: &State<T>) -> bool;
+
     fn unary_operation(&mut self, x: State<T>) -> bool {
-        if self.n() == 1 || x.expression.get_divide().is_none() || !self.rational_check(x.number) {
+        if !self.need_unary_operation(&x) {
             return false;
         }
-        let number = x.number;
-        let digits = x.digits;
         let (expression_numerator, expression_denominator) = x.expression.get_divide().unwrap();
-        if is_single_digit(expression_denominator, self.n()) {
+        if is_single_digit(expression_denominator) {
             return self.division_diff_one(
-                number,
-                digits,
+                x.number,
+                x.digits,
                 expression_numerator.clone(),
                 expression_denominator.clone(),
             );
@@ -49,10 +49,10 @@ pub trait Solver<T: Number> {
         let mut rhs: Option<Rc<Expression<T>>> = None;
         while let Some((p, q)) = lhs.get_multiply() {
             lhs = p;
-            if is_single_digit(q, self.n()) {
+            if is_single_digit(q) {
                 return self.division_diff_one(
-                    number,
-                    digits,
+                    x.number,
+                    x.digits,
                     Expression::from_divide(
                         expression_numerator.clone(),
                         if let Some(r) = rhs.as_ref() {
@@ -190,12 +190,18 @@ pub trait Solver<T: Number> {
     ) -> bool;
 }
 
-fn is_single_digit<T: Number>(expression: &Expression<T>, n: i128) -> bool {
+fn is_single_digit<T: Number>(expression: &Expression<T>) -> bool {
     match expression {
-        Expression::Number(x) => x.to_int() == Some(n),
-        Expression::Negate(x) => is_single_digit(x, n),
-        Expression::Sqrt(x, _) => is_single_digit(x, n),
-        Expression::Factorial(x) => is_single_digit(x, n),
+        Expression::Number(x) => {
+            if let Some(n) = x.to_int() {
+                n < 10
+            } else {
+                false
+            }
+        }
+        Expression::Negate(x) => is_single_digit(x),
+        Expression::Sqrt(x, _) => is_single_digit(x),
+        Expression::Factorial(x) => is_single_digit(x),
         _ => false,
     }
 }
