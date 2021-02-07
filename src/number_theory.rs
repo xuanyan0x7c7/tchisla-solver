@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 
 fn generate_squares(n: usize) -> Vec<bool> {
     let mut result = vec![false; n];
-    for i in 0..(n / 2) {
+    for i in 0..=(n / 2) {
         result[(i * i) % n] = true;
     }
     result
@@ -30,6 +30,7 @@ pub fn try_sqrt(n: i128) -> Option<i128> {
         return None;
     }
     let mut x = (n as f64).sqrt() as i128;
+    x = (x + n / x) / 2;
     loop {
         let y = (x + n / x) / 2;
         if y >= x {
