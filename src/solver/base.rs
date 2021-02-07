@@ -194,13 +194,7 @@ pub trait Solver<T: Number> {
 
 fn is_single_digit<T: Number>(expression: &Expression<T>) -> bool {
     match expression {
-        Expression::Number(x) => {
-            if let Some(n) = x.to_int() {
-                n < 10
-            } else {
-                false
-            }
-        }
+        Expression::Number(x) => x.to_int().unwrap_or(10) < 10,
         Expression::Negate(x) => is_single_digit(x),
         Expression::Sqrt(x, _) => is_single_digit(x),
         Expression::Factorial(x) => is_single_digit(x),

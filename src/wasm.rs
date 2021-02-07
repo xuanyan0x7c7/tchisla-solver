@@ -6,17 +6,17 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
 #[derive(Deserialize, Serialize)]
-pub struct Config {
-    pub max_depth: usize,
-    pub max_digits: usize,
-    pub max_factorial: u32,
-    pub max_quadratic_power: u8,
+struct Config {
+    max_depth: usize,
+    max_digits: usize,
+    max_factorial: u32,
+    max_quadratic_power: u8,
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct Solution {
-    pub digits: usize,
-    pub expression: String,
+struct Solution {
+    digits: usize,
+    expression: String,
 }
 
 #[wasm_bindgen(js_name = solveIntegral)]
@@ -52,8 +52,6 @@ pub fn _solve_integral(n: i32, target: i32, config: &JsValue) -> JsValue {
 
 #[wasm_bindgen(js_name = solveRational)]
 pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
-    let n = n as i128;
-    let target = target as i128;
     let config: Config = config.into_serde().unwrap();
     let mut solver = RationalSolver::new(
         n as i128,
@@ -64,7 +62,7 @@ pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
         },
     );
     if let Some((expression, digits)) = solver.solve(
-        target,
+        target as i128,
         if config.max_depth == 0 {
             None
         } else {

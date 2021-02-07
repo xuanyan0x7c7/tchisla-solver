@@ -26,7 +26,7 @@ impl Number for Ratio<i128> {
 
     #[inline]
     fn to_int(self) -> Option<i128> {
-        if *self.denom() == 1 {
+        if self.is_integer() {
             Some(*self.numer())
         } else {
             None
