@@ -51,7 +51,7 @@ fn main() {
             Limits {
                 max_digits: 28,
                 max_factorial: 11,
-                max_quadratic_power: 3,
+                max_quadratic_power: if n == 7 { 3 } else { 2 },
             },
         );
         if let Some((expression, digits)) = quadratic_solver.solve(target, max_depth) {

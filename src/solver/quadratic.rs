@@ -1,5 +1,6 @@
 use crate::expression::Expression;
 use crate::number::Number;
+use crate::number_theory::factorial_divide as fact_div;
 use crate::quadratic::{Quadratic, PRIMES};
 use crate::solver::base::{Limits, Solver, State};
 use num::traits::Pow;
@@ -28,14 +29,24 @@ fn quadratic_digits(x: &Quadratic) -> f64 {
     result
 }
 
+enum SearchState {
+    None,
+    Concat,
+    ExtraState(usize),
+    UnaryOperation(usize),
+    BinaryOperationOfDifferentDepth(usize, (usize, usize)),
+    BinaryOperationOfSameDepth((usize, usize)),
+    Finish,
+}
+
 pub struct QuadraticSolver {
     n: i128,
-    target: Option<Quadratic>,
-    max_depth: Option<usize>,
-    states: HashMap<Quadratic, Rc<Expression<Quadratic>>>,
+    target: Quadratic,
+    states: HashMap<Quadratic, (Rc<Expression<Quadratic>>, usize)>,
     states_by_depth: Vec<Vec<Quadratic>>,
     extra_states_by_depth: Vec<Vec<ExtraState>>,
     depth_searched: usize,
+    search_state: SearchState,
     limits: Limits,
 }
 
@@ -43,12 +54,12 @@ impl Solver<Quadratic> for QuadraticSolver {
     fn new(n: i128, limits: Limits) -> Self {
         Self {
             n,
-            target: None,
-            max_depth: None,
+            target: Quadratic::from_int(0),
             states: HashMap::new(),
             states_by_depth: vec![],
             extra_states_by_depth: vec![],
             depth_searched: 0,
+            search_state: SearchState::None,
             limits,
         }
     }
@@ -73,116 +84,22 @@ impl Solver<Quadratic> for QuadraticSolver {
         target: i128,
         max_depth: Option<usize>,
     ) -> Option<(Rc<Expression<Quadratic>>, usize)> {
-        self.target = Some(Quadratic::from_int(target));
-        self.max_depth = max_depth;
-        let mut digits = 0usize;
+        self.target = Quadratic::from_int(target);
+        if let Some((expression, digits)) = self.states.get(&self.target) {
+            if max_depth.unwrap_or(usize::MAX) >= *digits {
+                return Some((expression.clone(), *digits));
+            }
+        }
+        let mut digits = self.depth_searched;
         loop {
             digits += 1;
-            if digits > self.max_depth.unwrap_or(usize::MAX) {
+            if digits > max_depth.unwrap_or(usize::MAX) {
                 return None;
             }
             if self.search(digits) {
-                let expression = self.states.get(self.target.as_ref().unwrap()).unwrap();
-                return Some((expression.clone(), digits));
+                return Some(self.states.get(&self.target).unwrap().clone());
             }
         }
-    }
-
-    fn search(&mut self, digits: usize) -> bool {
-        if self.states.contains_key(self.target.as_ref().unwrap()) {
-            return true;
-        }
-        if digits <= self.depth_searched {
-            return false;
-        }
-        self.states_by_depth.resize(digits + 1, vec![]);
-        if digits == self.depth_searched + 1 {
-            for x in self.states_by_depth[digits].iter() {
-                self.states.remove(x);
-            }
-            self.states_by_depth[digits].clear();
-            if self.extra_states_by_depth.len() > digits + 1 {
-                for list in self.extra_states_by_depth[(digits + 1)..].iter_mut() {
-                    list.retain(|x| x.origin_depth <= digits);
-                }
-            }
-        }
-        if self.concat(digits) {
-            return true;
-        }
-        if self.extra_states_by_depth.len() > digits {
-            let l = self.extra_states_by_depth[digits].len();
-            for i in 0..l {
-                let state = self.extra_states_by_depth[digits][i].clone();
-                if self.check(state.number, digits, || state.expression) {
-                    return true;
-                }
-            }
-        }
-        let l = self.states_by_depth[digits - 1].len();
-        for i in 0..l {
-            let number = self.states_by_depth[digits - 1][i];
-            if self.unary_operation(State {
-                digits,
-                number,
-                expression: self.states.get(&number).unwrap().clone(),
-            }) {
-                return true;
-            }
-        }
-        for d1 in 1..((digits + 1) >> 1) {
-            let d2 = digits - d1;
-            let l1 = self.states_by_depth[d1].len();
-            let l2 = self.states_by_depth[d2].len();
-            for i in 0..l1 {
-                let n1 = self.states_by_depth[d1][i];
-                let e1 = self.states.get(&n1).unwrap().clone();
-                for j in 0..l2 {
-                    let n2 = self.states_by_depth[d2][j];
-                    if self.binary_operation(
-                        State {
-                            digits: d1,
-                            number: n1,
-                            expression: e1.clone(),
-                        },
-                        State {
-                            digits: d2,
-                            number: n2,
-                            expression: self.states.get(&n2).unwrap().clone(),
-                        },
-                    ) {
-                        return true;
-                    }
-                }
-            }
-        }
-        if digits % 2 == 0 {
-            let d = digits >> 1;
-            let l = self.states_by_depth[d].len();
-            for i in 0..l {
-                let n1 = self.states_by_depth[d][i];
-                let e1 = self.states.get(&n1).unwrap().clone();
-                for j in i..l {
-                    let n2 = self.states_by_depth[d][j].clone();
-                    if self.binary_operation(
-                        State {
-                            digits: d,
-                            number: n1,
-                            expression: e1.clone(),
-                        },
-                        State {
-                            digits: d,
-                            number: n2,
-                            expression: self.states.get(&n2).unwrap().clone(),
-                        },
-                    ) {
-                        return true;
-                    }
-                }
-            }
-        }
-        self.depth_searched = digits;
-        false
     }
 
     fn need_unary_operation(&self, x: &State<Quadratic>) -> bool {
@@ -193,38 +110,42 @@ impl Solver<Quadratic> for QuadraticSolver {
     }
 
     fn binary_operation(&mut self, x: State<Quadratic>, y: State<Quadratic>) -> bool {
-        if self.div(&x, &y) || self.mul(&x, &y) {
-            return true;
+        let mut found = false;
+        if self.div(&x, &y) {
+            found = true;
+        }
+        if self.mul(&x, &y) {
+            found = true;
         }
         if x.number.quadratic_power() == y.number.quadratic_power()
             && x.number.quadratic_part() == y.number.quadratic_part()
-            && (self.add(&x, &y) || self.sub(&x, &y))
         {
-            return true;
+            if self.add(&x, &y) {
+                found = true;
+            }
+            if self.sub(&x, &y) {
+                found = true;
+            }
         }
         if y.number.to_int().is_some() && self.pow(&x, &y) {
-            return true;
+            found = true;
         }
         if x.number.to_int().is_some() && self.pow(&y, &x) {
-            return true;
+            found = true;
         }
-        x.number.to_int().is_some() && y.number.to_int().is_some() && self.factorial_divide(&x, &y)
+        if x.number.to_int().is_some()
+            && y.number.to_int().is_some()
+            && self.factorial_divide(&x, &y)
+        {
+            found = true;
+        }
+        found
     }
 
     #[inline]
     fn range_check(&self, x: Quadratic) -> bool {
         let limit = 1i128 << self.limits.max_digits as u32;
         *x.rational_part().numer() <= limit && *x.rational_part().denom() <= limit
-    }
-
-    #[inline]
-    fn integer_check(&self, x: Quadratic) -> bool {
-        *x.quadratic_power() == 0 && x.rational_part().is_integer()
-    }
-
-    #[inline]
-    fn rational_check(&self, x: Quadratic) -> bool {
-        *x.quadratic_power() == 0
     }
 
     #[inline]
@@ -238,9 +159,9 @@ impl Solver<Quadratic> for QuadraticSolver {
         digits: usize,
         expression: Rc<Expression<Quadratic>>,
     ) -> bool {
-        self.states.insert(x, expression);
+        self.states.insert(x, (expression, digits));
         self.states_by_depth[digits].push(x);
-        Some(x) == self.target
+        x == self.target
     }
 
     fn insert_extra(
@@ -250,9 +171,6 @@ impl Solver<Quadratic> for QuadraticSolver {
         digits: usize,
         expression: Rc<Expression<Quadratic>>,
     ) {
-        if digits > self.max_depth.unwrap_or(usize::MAX) {
-            return;
-        }
         if self.extra_states_by_depth.len() <= digits {
             self.extra_states_by_depth.resize(digits + 1, Vec::new());
         }
@@ -300,21 +218,23 @@ impl Solver<Quadratic> for QuadraticSolver {
                 false
             };
         }
+        let mut found = false;
         let z = x.number.divide(&y.number);
         if y.expression.get_divide().is_none() {
             if self.check(z, x.digits + y.digits, || {
                 Expression::from_divide(x.expression.clone(), y.expression.clone())
             }) {
-                return true;
+                found = true;
             }
         }
         if x.expression.get_divide().is_none() {
-            self.check(z.inverse(), x.digits + y.digits, || {
+            if self.check(z.inverse(), x.digits + y.digits, || {
                 Expression::from_divide(y.expression.clone(), x.expression.clone())
-            })
-        } else {
-            false
+            }) {
+                found = true;
+            }
         }
+        found
     }
 
     fn pow(&mut self, x: &State<Quadratic>, y: &State<Quadratic>) -> bool {
@@ -373,6 +293,52 @@ impl Solver<Quadratic> for QuadraticSolver {
         }
     }
 
+    fn factorial_divide(&mut self, x: &State<Quadratic>, y: &State<Quadratic>) -> bool {
+        if x.number == y.number {
+            return false;
+        }
+        let x_int = x.number.to_int();
+        let y_int = y.number.to_int();
+        if x_int.is_none() || y_int.is_none() {
+            return false;
+        }
+        let mut x_int = x_int.unwrap();
+        let mut y_int = y_int.unwrap();
+        let mut x = x;
+        let mut y = y;
+        if x_int < y_int {
+            let temp = x;
+            x = y;
+            y = temp;
+            let temp = x_int;
+            x_int = y_int;
+            y_int = temp;
+        }
+        if x_int <= self.get_max_factorial_limit() as i128
+            || y_int <= 2
+            || x_int - y_int == 1
+            || (x_int - y_int) as f64 * ((x_int as f64).log2() + (y_int as f64).log2())
+                > self.get_max_digits() as f64 * 2.0
+        {
+            return false;
+        }
+        let mut found = false;
+        let x_expression = Expression::from_factorial(x.expression.clone());
+        let y_expression = Expression::from_factorial(y.expression.clone());
+        let z = Quadratic::from_int(fact_div(x_int, y_int));
+        if self.check(z, x.digits + y.digits, || {
+            Expression::from_divide(x_expression.clone(), y_expression.clone())
+        }) {
+            found = true;
+        }
+        if self.check(z.inverse(), x.digits + y.digits, || {
+            Expression::from_divide(y_expression, x_expression)
+        }) {
+            found = true;
+        }
+        found
+    }
+
     fn division_diff_one(
         &mut self,
         x: Quadratic,
@@ -380,6 +346,7 @@ impl Solver<Quadratic> for QuadraticSolver {
         numerator: Rc<Expression<Quadratic>>,
         denominator: Rc<Expression<Quadratic>>,
     ) -> bool {
+        let mut found = false;
         if x.rational_part().numer() < x.rational_part().denom() {
             if self.check(x.subtract_integer(1).negate(), digits, || {
                 Expression::from_divide(
@@ -387,7 +354,7 @@ impl Solver<Quadratic> for QuadraticSolver {
                     denominator.clone(),
                 )
             }) {
-                return true;
+                found = true;
             }
         } else if x.rational_part().numer() > x.rational_part().denom() {
             if self.check(x.subtract_integer(1), digits, || {
@@ -396,14 +363,155 @@ impl Solver<Quadratic> for QuadraticSolver {
                     denominator.clone(),
                 )
             }) {
-                return true;
+                found = true;
             }
         }
-        self.check(x.add_integer(1), digits, || {
+        if self.check(x.add_integer(1), digits, || {
             Expression::from_divide(
                 Expression::from_add(numerator.clone(), denominator.clone()),
                 denominator.clone(),
             )
-        })
+        }) {
+            found = true;
+        }
+        found
+    }
+}
+
+impl QuadraticSolver {
+    fn search(&mut self, digits: usize) -> bool {
+        match self.search_state {
+            SearchState::None => {
+                self.search_state = SearchState::Concat;
+                self.states_by_depth.resize(digits + 1, vec![]);
+            }
+            _ => {}
+        }
+        match self.search_state {
+            SearchState::Concat => {
+                self.search_state = SearchState::ExtraState(0);
+                if self.concat(digits) {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+        match self.search_state {
+            SearchState::ExtraState(start) => {
+                if self.extra_states_by_depth.len() > digits {
+                    let l = self.extra_states_by_depth[digits].len();
+                    for i in start..l {
+                        self.search_state = SearchState::ExtraState(i + 1);
+                        let state = self.extra_states_by_depth[digits][i].clone();
+                        if self.check(state.number, digits, || state.expression) {
+                            return true;
+                        }
+                    }
+                }
+                self.search_state = SearchState::UnaryOperation(0);
+            }
+            _ => {}
+        }
+        match self.search_state {
+            SearchState::UnaryOperation(start) => {
+                let l = self.states_by_depth[digits - 1].len();
+                for i in start..l {
+                    self.search_state = SearchState::UnaryOperation(i + 1);
+                    let number = self.states_by_depth[digits - 1][i];
+                    if self.unary_operation(State {
+                        digits,
+                        number,
+                        expression: self.states.get(&number).unwrap().0.clone(),
+                    }) {
+                        return true;
+                    }
+                }
+                self.search_state = SearchState::BinaryOperationOfDifferentDepth(1, (0, 0));
+            }
+            _ => {}
+        }
+        match self.search_state {
+            SearchState::BinaryOperationOfDifferentDepth(start_depth, start_position) => {
+                for d1 in start_depth..((digits + 1) >> 1) {
+                    let d2 = digits - d1;
+                    let l1 = self.states_by_depth[d1].len();
+                    let l2 = self.states_by_depth[d2].len();
+                    for i in 0..l1 {
+                        if d1 == start_depth && i < start_position.0 {
+                            continue;
+                        }
+                        let n1 = self.states_by_depth[d1][i];
+                        let e1 = self.states.get(&n1).unwrap().0.clone();
+                        for j in 0..l2 {
+                            if d1 == start_depth && i == start_position.0 && j < start_position.1 {
+                                continue;
+                            }
+                            self.search_state =
+                                SearchState::BinaryOperationOfDifferentDepth(d1, (i, j + 1));
+                            let n2 = self.states_by_depth[d2][j];
+                            if self.binary_operation(
+                                State {
+                                    digits: d1,
+                                    number: n1,
+                                    expression: e1.clone(),
+                                },
+                                State {
+                                    digits: d2,
+                                    number: n2,
+                                    expression: self.states.get(&n2).unwrap().0.clone(),
+                                },
+                            ) {
+                                return true;
+                            }
+                        }
+                        self.search_state =
+                            SearchState::BinaryOperationOfDifferentDepth(d1, (i + 1, 0));
+                    }
+                    self.search_state =
+                        SearchState::BinaryOperationOfDifferentDepth(d1 + 1, (0, 0));
+                }
+                self.search_state = SearchState::BinaryOperationOfSameDepth((0, 0));
+            }
+            _ => {}
+        }
+        match self.search_state {
+            SearchState::BinaryOperationOfSameDepth(start_position) => {
+                if digits % 2 == 0 {
+                    let d = digits >> 1;
+                    let l = self.states_by_depth[d].len();
+                    for i in start_position.1..l {
+                        let n1 = self.states_by_depth[d][i];
+                        let e1 = self.states.get(&n1).unwrap().0.clone();
+                        for j in i..l {
+                            if i == start_position.0 && j < start_position.1 {
+                                continue;
+                            }
+                            self.search_state = SearchState::BinaryOperationOfSameDepth((i, j + 1));
+                            let n2 = self.states_by_depth[d][j];
+                            if self.binary_operation(
+                                State {
+                                    digits: d,
+                                    number: n1,
+                                    expression: e1.clone(),
+                                },
+                                State {
+                                    digits: d,
+                                    number: n2,
+                                    expression: self.states.get(&n2).unwrap().0.clone(),
+                                },
+                            ) {
+                                return true;
+                            }
+                        }
+                        self.search_state = SearchState::BinaryOperationOfSameDepth((i + 1, i + 1));
+                    }
+                }
+                self.search_state = SearchState::Finish;
+            }
+            _ => {}
+        }
+        self.depth_searched = digits;
+        self.search_state = SearchState::None;
+        false
     }
 }

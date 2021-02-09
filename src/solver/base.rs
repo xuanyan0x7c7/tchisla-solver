@@ -1,6 +1,6 @@
 use crate::expression::Expression;
 use crate::number::Number;
-use crate::number_theory::{factorial as fact, factorial_divide as fact_div};
+use crate::number_theory::factorial as fact;
 use std::rc::Rc;
 
 pub struct Limits {
@@ -28,7 +28,6 @@ pub trait Solver<T: Number> {
         target: i128,
         max_depth: Option<usize>,
     ) -> Option<(Rc<Expression<T>>, usize)>;
-    fn search(&mut self, digits: usize) -> bool;
 
     fn need_unary_operation(&self, x: &State<T>) -> bool;
 
@@ -73,15 +72,7 @@ pub trait Solver<T: Number> {
         false
     }
 
-    fn binary_operation(&mut self, x: State<T>, y: State<T>) -> bool {
-        self.div(&x, &y)
-            || self.mul(&x, &y)
-            || self.add(&x, &y)
-            || self.sub(&x, &y)
-            || self.pow(&x, &y)
-            || self.pow(&y, &x)
-            || self.factorial_divide(&x, &y)
-    }
+    fn binary_operation(&mut self, x: State<T>, y: State<T>) -> bool;
 
     fn check<F>(&mut self, x: T, digits: usize, expression_fn: F) -> bool
     where
@@ -91,8 +82,9 @@ pub trait Solver<T: Number> {
             return false;
         }
         let expression = expression_fn();
+        let mut found = false;
         if self.insert(x, digits, expression.clone()) {
-            return true;
+            found = true;
         }
         let state = State {
             digits,
@@ -100,18 +92,15 @@ pub trait Solver<T: Number> {
             expression,
         };
         if self.sqrt(&state) {
-            true
-        } else if self.integer_check(x) {
-            self.factorial(&state)
-        } else {
-            false
+            found = true;
         }
+        if x.to_int().is_some() && self.factorial(&state) {
+            found = true;
+        }
+        found
     }
 
     fn range_check(&self, x: T) -> bool;
-    fn integer_check(&self, x: T) -> bool;
-    fn rational_check(&self, x: T) -> bool;
-
     fn already_searched(&self, x: T) -> bool;
     fn insert(&mut self, x: T, digits: usize, expression: Rc<Expression<T>>) -> bool;
     fn insert_extra(&mut self, x: T, depth: usize, digits: usize, expression: Rc<Expression<T>>);
@@ -145,43 +134,7 @@ pub trait Solver<T: Number> {
         }
     }
 
-    fn factorial_divide(&mut self, x: &State<T>, y: &State<T>) -> bool {
-        if x.number == y.number {
-            return false;
-        }
-        let x_int = x.number.to_int();
-        let y_int = y.number.to_int();
-        if x_int.is_none() || y_int.is_none() {
-            return false;
-        }
-        let mut x_int = x_int.unwrap();
-        let mut y_int = y_int.unwrap();
-        let mut x = x;
-        let mut y = y;
-        if x_int < y_int {
-            let temp = x;
-            x = y;
-            y = temp;
-            let temp = x_int;
-            x_int = y_int;
-            y_int = temp;
-        }
-        if x_int <= self.get_max_factorial_limit() as i128
-            || y_int <= 2
-            || x_int - y_int == 1
-            || (x_int - y_int) as f64 * ((x_int as f64).log2() + (y_int as f64).log2())
-                > self.get_max_digits() as f64 * 2.0
-        {
-            return false;
-        }
-        let x_expression = Expression::from_factorial(x.expression.clone());
-        let y_expression = Expression::from_factorial(y.expression.clone());
-        self.check(
-            T::from_int(fact_div(x_int, y_int)),
-            x.digits + y.digits,
-            || Expression::from_divide(x_expression.clone(), y_expression.clone()),
-        )
-    }
+    fn factorial_divide(&mut self, x: &State<T>, y: &State<T>) -> bool;
 
     fn division_diff_one(
         &mut self,
