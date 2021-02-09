@@ -17,13 +17,14 @@ pub struct State<T: Number> {
 
 pub trait Solver<T: Number> {
     fn new(n: i128, limits: Limits) -> Self;
-
-    fn n(&self) -> i128;
-
-    fn get_max_digits(&self) -> usize;
-    fn get_max_factorial_limit(&self) -> i128;
-
     fn solve(&mut self, target: i128, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)>;
+    fn insert_extra(&mut self, x: T, digits: usize, expression: Rc<Expression>);
+}
+
+pub trait SolverPrivate<T: Number> {
+    fn n(&self) -> i128;
+    fn max_digits(&self) -> usize;
+    fn max_factorial_limit(&self) -> i128;
 
     fn need_unary_operation(&self, x: &State<T>) -> bool;
 
@@ -99,10 +100,9 @@ pub trait Solver<T: Number> {
     fn range_check(&self, x: T) -> bool;
     fn already_searched(&self, x: T) -> bool;
     fn insert(&mut self, x: T, digits: usize, expression: Rc<Expression>) -> bool;
-    fn insert_extra(&mut self, x: T, depth: usize, digits: usize, expression: Rc<Expression>);
 
     fn concat(&mut self, digits: usize) -> bool {
-        if digits as f64 * 10f64.log2() - 9f64.log2() > self.get_max_digits() as f64 {
+        if digits as f64 * 10f64.log2() - 9f64.log2() > self.max_digits() as f64 {
             return false;
         }
         let x = (10i128.pow(digits as u32) - 1) / 9 * self.n();
@@ -118,7 +118,7 @@ pub trait Solver<T: Number> {
 
     fn factorial(&mut self, x: &State<T>) -> bool {
         if let Some(n) = x.number.to_int() {
-            if n < self.get_max_factorial_limit() as i128 {
+            if n < self.max_factorial_limit() as i128 {
                 self.check(T::from_int(fact(n)), x.digits, || {
                     Expression::from_factorial(x.expression.clone())
                 })

@@ -2,18 +2,11 @@ use crate::expression::Expression;
 use crate::number::Number;
 use crate::number_theory::factorial_divide as fact_div;
 use crate::quadratic::{Quadratic, PRIMES};
-use crate::solver::base::{Limits, Solver, State};
+use crate::solver::base::{Limits, Solver, SolverPrivate, State};
 use num::traits::Pow;
 use num::{Signed, Zero};
 use std::collections::HashMap;
 use std::rc::Rc;
-
-#[derive(Clone)]
-struct ExtraState {
-    origin_depth: usize,
-    number: Quadratic,
-    expression: Rc<Expression>,
-}
 
 fn quadratic_digits(x: &Quadratic) -> f64 {
     let mut result = f64::max(
@@ -44,7 +37,7 @@ pub struct QuadraticSolver {
     target: Quadratic,
     states: HashMap<Quadratic, (Rc<Expression>, usize)>,
     states_by_depth: Vec<Vec<Quadratic>>,
-    extra_states_by_depth: Vec<Vec<ExtraState>>,
+    extra_states_by_depth: Vec<Vec<(Quadratic, Rc<Expression>)>>,
     depth_searched: usize,
     search_state: SearchState,
     limits: Limits,
@@ -64,21 +57,6 @@ impl Solver<Quadratic> for QuadraticSolver {
         }
     }
 
-    #[inline]
-    fn n(&self) -> i128 {
-        self.n
-    }
-
-    #[inline]
-    fn get_max_digits(&self) -> usize {
-        self.limits.max_digits
-    }
-
-    #[inline]
-    fn get_max_factorial_limit(&self) -> i128 {
-        self.limits.max_factorial
-    }
-
     fn solve(&mut self, target: i128, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)> {
         self.target = Quadratic::from_int(target);
         if let Some((expression, digits)) = self.states.get(&self.target) {
@@ -96,6 +74,30 @@ impl Solver<Quadratic> for QuadraticSolver {
                 return Some(self.states.get(&self.target).unwrap().clone());
             }
         }
+    }
+
+    fn insert_extra(&mut self, x: Quadratic, digits: usize, expression: Rc<Expression>) {
+        if self.extra_states_by_depth.len() <= digits {
+            self.extra_states_by_depth.resize(digits + 1, Vec::new());
+        }
+        self.extra_states_by_depth[digits].push((x, expression));
+    }
+}
+
+impl SolverPrivate<Quadratic> for QuadraticSolver {
+    #[inline]
+    fn n(&self) -> i128 {
+        self.n
+    }
+
+    #[inline]
+    fn max_digits(&self) -> usize {
+        self.limits.max_digits
+    }
+
+    #[inline]
+    fn max_factorial_limit(&self) -> i128 {
+        self.limits.max_factorial
     }
 
     fn need_unary_operation(&self, x: &State<Quadratic>) -> bool {
@@ -153,23 +155,6 @@ impl Solver<Quadratic> for QuadraticSolver {
         self.states.insert(x, (expression, digits));
         self.states_by_depth[digits].push(x);
         x == self.target
-    }
-
-    fn insert_extra(
-        &mut self,
-        x: Quadratic,
-        depth: usize,
-        digits: usize,
-        expression: Rc<Expression>,
-    ) {
-        if self.extra_states_by_depth.len() <= digits {
-            self.extra_states_by_depth.resize(digits + 1, Vec::new());
-        }
-        self.extra_states_by_depth[digits].push(ExtraState {
-            origin_depth: depth,
-            number: x,
-            expression,
-        });
     }
 
     fn add(&mut self, x: &State<Quadratic>, y: &State<Quadratic>) -> bool {
@@ -305,11 +290,11 @@ impl Solver<Quadratic> for QuadraticSolver {
             x_int = y_int;
             y_int = temp;
         }
-        if x_int <= self.get_max_factorial_limit() as i128
+        if x_int <= self.max_factorial_limit() as i128
             || y_int <= 2
             || x_int - y_int == 1
             || (x_int - y_int) as f64 * ((x_int as f64).log2() + (y_int as f64).log2())
-                > self.get_max_digits() as f64 * 2.0
+                > self.max_digits() as f64 * 2.0
         {
             return false;
         }
@@ -393,8 +378,8 @@ impl QuadraticSolver {
                     let l = self.extra_states_by_depth[digits].len();
                     for i in start..l {
                         self.search_state = SearchState::ExtraState(i + 1);
-                        let state = self.extra_states_by_depth[digits][i].clone();
-                        if self.check(state.number, digits, || state.expression) {
+                        let (number, expression) = self.extra_states_by_depth[digits][i].clone();
+                        if self.check(number, digits, || expression) {
                             return true;
                         }
                     }

@@ -1,15 +1,8 @@
 use crate::expression::Expression;
 use crate::number_theory::{factorial_divide as fact_div, try_sqrt};
-use crate::solver::base::{Limits, Solver, State};
+use crate::solver::base::{Limits, Solver, SolverPrivate, State};
 use std::collections::HashMap;
 use std::rc::Rc;
-
-#[derive(Clone)]
-struct ExtraState {
-    origin_depth: usize,
-    number: i128,
-    expression: Rc<Expression>,
-}
 
 enum SearchState {
     None,
@@ -26,7 +19,7 @@ pub struct IntegralSolver {
     target: i128,
     states: HashMap<i128, (Rc<Expression>, usize)>,
     states_by_depth: Vec<Vec<i128>>,
-    extra_states_by_depth: Vec<Vec<ExtraState>>,
+    extra_states_by_depth: Vec<Vec<(i128, Rc<Expression>)>>,
     depth_searched: usize,
     search_state: SearchState,
     limits: Limits,
@@ -46,21 +39,6 @@ impl Solver<i128> for IntegralSolver {
         }
     }
 
-    #[inline]
-    fn n(&self) -> i128 {
-        self.n
-    }
-
-    #[inline]
-    fn get_max_digits(&self) -> usize {
-        self.limits.max_digits
-    }
-
-    #[inline]
-    fn get_max_factorial_limit(&self) -> i128 {
-        self.limits.max_factorial
-    }
-
     fn solve(&mut self, target: i128, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)> {
         self.target = target;
         if let Some((expression, digits)) = self.states.get(&self.target) {
@@ -78,6 +56,30 @@ impl Solver<i128> for IntegralSolver {
                 return Some(self.states.get(&self.target).unwrap().clone());
             }
         }
+    }
+
+    fn insert_extra(&mut self, x: i128, digits: usize, expression: Rc<Expression>) {
+        if self.extra_states_by_depth.len() <= digits {
+            self.extra_states_by_depth.resize(digits + 1, vec![]);
+        }
+        self.extra_states_by_depth[digits].push((x, expression));
+    }
+}
+
+impl SolverPrivate<i128> for IntegralSolver {
+    #[inline]
+    fn n(&self) -> i128 {
+        self.n
+    }
+
+    #[inline]
+    fn max_digits(&self) -> usize {
+        self.limits.max_digits
+    }
+
+    #[inline]
+    fn max_factorial_limit(&self) -> i128 {
+        self.limits.max_factorial
     }
 
     fn need_unary_operation(&self, x: &State<i128>) -> bool {
@@ -124,17 +126,6 @@ impl Solver<i128> for IntegralSolver {
         self.states.insert(x, (expression, digits));
         self.states_by_depth[digits].push(x);
         x == self.target
-    }
-
-    fn insert_extra(&mut self, x: i128, depth: usize, digits: usize, expression: Rc<Expression>) {
-        if self.extra_states_by_depth.len() <= digits {
-            self.extra_states_by_depth.resize(digits + 1, vec![]);
-        }
-        self.extra_states_by_depth[digits].push(ExtraState {
-            origin_depth: depth,
-            number: x,
-            expression,
-        });
     }
 
     fn add(&mut self, x: &State<i128>, y: &State<i128>) -> bool {
@@ -238,11 +229,11 @@ impl Solver<i128> for IntegralSolver {
             x = y;
             y = temp;
         }
-        if x.number <= self.get_max_factorial_limit() as i128
+        if x.number <= self.max_factorial_limit() as i128
             || y.number <= 2
             || x.number - y.number == 1
             || (x.number - y.number) as f64 * ((x.number as f64).log2() + (y.number as f64).log2())
-                > self.get_max_digits() as f64 * 2.0
+                > self.max_digits() as f64 * 2.0
         {
             return false;
         }
@@ -308,8 +299,8 @@ impl IntegralSolver {
                     let l = self.extra_states_by_depth[digits].len();
                     for i in start..l {
                         self.search_state = SearchState::ExtraState(i + 1);
-                        let state = self.extra_states_by_depth[digits][i].clone();
-                        if self.check(state.number, digits, || state.expression) {
+                        let (number, expression) = self.extra_states_by_depth[digits][i].clone();
+                        if self.check(number, digits, || expression) {
                             return true;
                         }
                     }
