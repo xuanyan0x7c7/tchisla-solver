@@ -14,7 +14,7 @@ type Rational = Ratio<i128>;
 struct ExtraState {
     origin_depth: usize,
     number: Rational,
-    expression: Rc<Expression<Rational>>,
+    expression: Rc<Expression>,
 }
 
 enum SearchState {
@@ -30,7 +30,7 @@ enum SearchState {
 pub struct RationalSolver {
     n: i128,
     target: Rational,
-    states: HashMap<Rational, (Rc<Expression<Rational>>, usize)>,
+    states: HashMap<Rational, (Rc<Expression>, usize)>,
     states_by_depth: Vec<Vec<Rational>>,
     extra_states_by_depth: Vec<Vec<ExtraState>>,
     depth_searched: usize,
@@ -67,11 +67,7 @@ impl Solver<Rational> for RationalSolver {
         self.limits.max_factorial
     }
 
-    fn solve(
-        &mut self,
-        target: i128,
-        max_depth: Option<usize>,
-    ) -> Option<(Rc<Expression<Rational>>, usize)> {
+    fn solve(&mut self, target: i128, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)> {
         self.target = Rational::from_int(target);
         if let Some((expression, digits)) = self.states.get(&self.target) {
             if max_depth.unwrap_or(usize::MAX) >= *digits {
@@ -131,7 +127,7 @@ impl Solver<Rational> for RationalSolver {
         self.states.contains_key(&x)
     }
 
-    fn insert(&mut self, x: Rational, digits: usize, expression: Rc<Expression<Rational>>) -> bool {
+    fn insert(&mut self, x: Rational, digits: usize, expression: Rc<Expression>) -> bool {
         self.states.insert(x, (expression, digits));
         self.states_by_depth[digits].push(x);
         x == self.target
@@ -142,7 +138,7 @@ impl Solver<Rational> for RationalSolver {
         x: Rational,
         depth: usize,
         digits: usize,
-        expression: Rc<Expression<Rational>>,
+        expression: Rc<Expression>,
     ) {
         if self.extra_states_by_depth.len() <= digits {
             self.extra_states_by_depth.resize(digits + 1, Vec::new());
@@ -318,8 +314,8 @@ impl Solver<Rational> for RationalSolver {
         &mut self,
         x: Rational,
         digits: usize,
-        numerator: Rc<Expression<Rational>>,
-        denominator: Rc<Expression<Rational>>,
+        numerator: Rc<Expression>,
+        denominator: Rc<Expression>,
     ) -> bool {
         let mut found = false;
         if x.numer() < x.denom() {

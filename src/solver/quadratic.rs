@@ -12,7 +12,7 @@ use std::rc::Rc;
 struct ExtraState {
     origin_depth: usize,
     number: Quadratic,
-    expression: Rc<Expression<Quadratic>>,
+    expression: Rc<Expression>,
 }
 
 fn quadratic_digits(x: &Quadratic) -> f64 {
@@ -42,7 +42,7 @@ enum SearchState {
 pub struct QuadraticSolver {
     n: i128,
     target: Quadratic,
-    states: HashMap<Quadratic, (Rc<Expression<Quadratic>>, usize)>,
+    states: HashMap<Quadratic, (Rc<Expression>, usize)>,
     states_by_depth: Vec<Vec<Quadratic>>,
     extra_states_by_depth: Vec<Vec<ExtraState>>,
     depth_searched: usize,
@@ -79,11 +79,7 @@ impl Solver<Quadratic> for QuadraticSolver {
         self.limits.max_factorial
     }
 
-    fn solve(
-        &mut self,
-        target: i128,
-        max_depth: Option<usize>,
-    ) -> Option<(Rc<Expression<Quadratic>>, usize)> {
+    fn solve(&mut self, target: i128, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)> {
         self.target = Quadratic::from_int(target);
         if let Some((expression, digits)) = self.states.get(&self.target) {
             if max_depth.unwrap_or(usize::MAX) >= *digits {
@@ -153,12 +149,7 @@ impl Solver<Quadratic> for QuadraticSolver {
         self.states.contains_key(&x)
     }
 
-    fn insert(
-        &mut self,
-        x: Quadratic,
-        digits: usize,
-        expression: Rc<Expression<Quadratic>>,
-    ) -> bool {
+    fn insert(&mut self, x: Quadratic, digits: usize, expression: Rc<Expression>) -> bool {
         self.states.insert(x, (expression, digits));
         self.states_by_depth[digits].push(x);
         x == self.target
@@ -169,7 +160,7 @@ impl Solver<Quadratic> for QuadraticSolver {
         x: Quadratic,
         depth: usize,
         digits: usize,
-        expression: Rc<Expression<Quadratic>>,
+        expression: Rc<Expression>,
     ) {
         if self.extra_states_by_depth.len() <= digits {
             self.extra_states_by_depth.resize(digits + 1, Vec::new());
@@ -343,8 +334,8 @@ impl Solver<Quadratic> for QuadraticSolver {
         &mut self,
         x: Quadratic,
         digits: usize,
-        numerator: Rc<Expression<Quadratic>>,
-        denominator: Rc<Expression<Quadratic>>,
+        numerator: Rc<Expression>,
+        denominator: Rc<Expression>,
     ) -> bool {
         let mut found = false;
         if x.rational_part().numer() < x.rational_part().denom() {

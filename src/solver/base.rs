@@ -12,7 +12,7 @@ pub struct Limits {
 pub struct State<T: Number> {
     pub digits: usize,
     pub number: T,
-    pub expression: Rc<Expression<T>>,
+    pub expression: Rc<Expression>,
 }
 
 pub trait Solver<T: Number> {
@@ -23,11 +23,7 @@ pub trait Solver<T: Number> {
     fn get_max_digits(&self) -> usize;
     fn get_max_factorial_limit(&self) -> i128;
 
-    fn solve(
-        &mut self,
-        target: i128,
-        max_depth: Option<usize>,
-    ) -> Option<(Rc<Expression<T>>, usize)>;
+    fn solve(&mut self, target: i128, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)>;
 
     fn need_unary_operation(&self, x: &State<T>) -> bool;
 
@@ -44,8 +40,8 @@ pub trait Solver<T: Number> {
                 denominator.clone(),
             );
         }
-        let mut lhs: &Rc<Expression<T>> = denominator;
-        let mut rhs: Option<Rc<Expression<T>>> = None;
+        let mut lhs: &Rc<Expression> = denominator;
+        let mut rhs: Option<Rc<Expression>> = None;
         while let Some((p, q)) = lhs.get_multiply() {
             lhs = p;
             if is_single_digit(q) {
@@ -76,7 +72,7 @@ pub trait Solver<T: Number> {
 
     fn check<F>(&mut self, x: T, digits: usize, expression_fn: F) -> bool
     where
-        F: FnOnce() -> Rc<Expression<T>>,
+        F: FnOnce() -> Rc<Expression>,
     {
         if !self.range_check(x) || self.already_searched(x) {
             return false;
@@ -102,15 +98,15 @@ pub trait Solver<T: Number> {
 
     fn range_check(&self, x: T) -> bool;
     fn already_searched(&self, x: T) -> bool;
-    fn insert(&mut self, x: T, digits: usize, expression: Rc<Expression<T>>) -> bool;
-    fn insert_extra(&mut self, x: T, depth: usize, digits: usize, expression: Rc<Expression<T>>);
+    fn insert(&mut self, x: T, digits: usize, expression: Rc<Expression>) -> bool;
+    fn insert_extra(&mut self, x: T, depth: usize, digits: usize, expression: Rc<Expression>);
 
     fn concat(&mut self, digits: usize) -> bool {
         if digits as f64 * 10f64.log2() - 9f64.log2() > self.get_max_digits() as f64 {
             return false;
         }
-        let x = T::from_int((10i128.pow(digits as u32) - 1) / 9 * self.n());
-        self.check(x, digits, || Expression::from_number(x))
+        let x = (10i128.pow(digits as u32) - 1) / 9 * self.n();
+        self.check(T::from_int(x), digits, || Expression::from_number(x))
     }
 
     fn add(&mut self, x: &State<T>, y: &State<T>) -> bool;
@@ -140,12 +136,12 @@ pub trait Solver<T: Number> {
         &mut self,
         x: T,
         digits: usize,
-        numerator: Rc<Expression<T>>,
-        denominator: Rc<Expression<T>>,
+        numerator: Rc<Expression>,
+        denominator: Rc<Expression>,
     ) -> bool;
 }
 
-fn is_single_digit<T: Number>(expression: &Expression<T>) -> bool {
+fn is_single_digit(expression: &Expression) -> bool {
     match expression {
         Expression::Number(x) => x.to_int().unwrap_or(10) < 10,
         Expression::Negate(x) => is_single_digit(x),

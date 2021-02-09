@@ -8,7 +8,7 @@ use std::rc::Rc;
 struct ExtraState {
     origin_depth: usize,
     number: i128,
-    expression: Rc<Expression<i128>>,
+    expression: Rc<Expression>,
 }
 
 enum SearchState {
@@ -24,7 +24,7 @@ enum SearchState {
 pub struct IntegralSolver {
     n: i128,
     target: i128,
-    states: HashMap<i128, (Rc<Expression<i128>>, usize)>,
+    states: HashMap<i128, (Rc<Expression>, usize)>,
     states_by_depth: Vec<Vec<i128>>,
     extra_states_by_depth: Vec<Vec<ExtraState>>,
     depth_searched: usize,
@@ -61,11 +61,7 @@ impl Solver<i128> for IntegralSolver {
         self.limits.max_factorial
     }
 
-    fn solve(
-        &mut self,
-        target: i128,
-        max_depth: Option<usize>,
-    ) -> Option<(Rc<Expression<i128>>, usize)> {
+    fn solve(&mut self, target: i128, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)> {
         self.target = target;
         if let Some((expression, digits)) = self.states.get(&self.target) {
             if max_depth.unwrap_or(usize::MAX) >= *digits {
@@ -124,19 +120,13 @@ impl Solver<i128> for IntegralSolver {
         self.states.contains_key(&x)
     }
 
-    fn insert(&mut self, x: i128, digits: usize, expression: Rc<Expression<i128>>) -> bool {
+    fn insert(&mut self, x: i128, digits: usize, expression: Rc<Expression>) -> bool {
         self.states.insert(x, (expression, digits));
         self.states_by_depth[digits].push(x);
         x == self.target
     }
 
-    fn insert_extra(
-        &mut self,
-        x: i128,
-        depth: usize,
-        digits: usize,
-        expression: Rc<Expression<i128>>,
-    ) {
+    fn insert_extra(&mut self, x: i128, depth: usize, digits: usize, expression: Rc<Expression>) {
         if self.extra_states_by_depth.len() <= digits {
             self.extra_states_by_depth.resize(digits + 1, vec![]);
         }
@@ -268,8 +258,8 @@ impl Solver<i128> for IntegralSolver {
         &mut self,
         x: i128,
         digits: usize,
-        numerator: Rc<Expression<i128>>,
-        denominator: Rc<Expression<i128>>,
+        numerator: Rc<Expression>,
+        denominator: Rc<Expression>,
     ) -> bool {
         let mut found = false;
         if x > 1 {
