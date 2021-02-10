@@ -15,9 +15,15 @@ pub struct State<T: Number> {
     pub expression: Rc<Expression>,
 }
 
-pub trait Solver<T: Number> {
+pub trait SolverBase<T: Number>: SolverPrivate<T> {
     fn new(n: i128, limits: Limits) -> Self;
-    fn solve(&mut self, target: i128, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)>;
+    fn solve(&mut self, target: T, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)>;
+    fn try_insert<F>(&mut self, x: T, digits: usize, expression_fn: F) -> bool
+    where
+        F: FnOnce() -> Rc<Expression>,
+    {
+        self.check(x, digits, expression_fn)
+    }
     fn insert_extra(&mut self, x: T, digits: usize, expression: Rc<Expression>);
 }
 

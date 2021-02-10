@@ -1,7 +1,11 @@
-use crate::solver::base::{Limits, Solver};
 use crate::solver::integral::IntegralSolver;
 use crate::solver::quadratic::QuadraticSolver;
 use crate::solver::rational::RationalSolver;
+use crate::{
+    solver::base::{Limits, SolverBase},
+    Number, Quadratic,
+};
+use num::rational::Ratio;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
@@ -21,8 +25,6 @@ struct Solution {
 
 #[wasm_bindgen(js_name = solveIntegral)]
 pub fn _solve_integral(n: i32, target: i32, config: &JsValue) -> JsValue {
-    let n = n as i128;
-    let target = target as i128;
     let config: Config = config.into_serde().unwrap();
     let mut solver = IntegralSolver::new(
         n as i128,
@@ -33,7 +35,7 @@ pub fn _solve_integral(n: i32, target: i32, config: &JsValue) -> JsValue {
         },
     );
     if let Some((expression, digits)) = solver.solve(
-        target,
+        target as i128,
         if config.max_depth == 0 {
             None
         } else {
@@ -62,7 +64,7 @@ pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
         },
     );
     if let Some((expression, digits)) = solver.solve(
-        target as i128,
+        Ratio::from_integer(target as i128),
         if config.max_depth == 0 {
             None
         } else {
@@ -81,8 +83,6 @@ pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
 
 #[wasm_bindgen(js_name = solveQuadratic)]
 pub fn _solve_quadratic(n: i32, target: i32, config: &JsValue) -> JsValue {
-    let n = n as i128;
-    let target = target as i128;
     let config: Config = config.into_serde().unwrap();
     let mut solver = QuadraticSolver::new(
         n as i128,
@@ -93,7 +93,7 @@ pub fn _solve_quadratic(n: i32, target: i32, config: &JsValue) -> JsValue {
         },
     );
     if let Some((expression, digits)) = solver.solve(
-        target,
+        Quadratic::from_int(target as i128),
         if config.max_depth == 0 {
             None
         } else {

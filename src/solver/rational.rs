@@ -1,7 +1,7 @@
 use crate::expression::Expression;
 use crate::number::Number;
 use crate::number_theory::{factorial_divide as fact_div, try_sqrt};
-use crate::solver::base::{Limits, Solver, SolverPrivate, State};
+use crate::solver::base::{Limits, SolverBase, SolverPrivate, State};
 use num::rational::Ratio;
 use num::traits::Inv;
 use num::{One, Signed, Zero};
@@ -31,7 +31,7 @@ pub struct RationalSolver {
     limits: Limits,
 }
 
-impl Solver<Rational> for RationalSolver {
+impl SolverBase<Rational> for RationalSolver {
     fn new(n: i128, limits: Limits) -> Self {
         Self {
             n,
@@ -45,8 +45,12 @@ impl Solver<Rational> for RationalSolver {
         }
     }
 
-    fn solve(&mut self, target: i128, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)> {
-        self.target = Rational::from_int(target);
+    fn solve(
+        &mut self,
+        target: Rational,
+        max_depth: Option<usize>,
+    ) -> Option<(Rc<Expression>, usize)> {
+        self.target = target;
         if let Some((expression, digits)) = self.states.get(&self.target) {
             if max_depth.unwrap_or(usize::MAX) >= *digits {
                 return Some((expression.clone(), *digits));

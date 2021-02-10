@@ -1,6 +1,6 @@
 use crate::expression::Expression;
 use crate::number_theory::{factorial_divide as fact_div, try_sqrt};
-use crate::solver::base::{Limits, Solver, SolverPrivate, State};
+use crate::solver::base::{Limits, SolverBase, SolverPrivate, State};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -25,7 +25,7 @@ pub struct IntegralSolver {
     limits: Limits,
 }
 
-impl Solver<i128> for IntegralSolver {
+impl SolverBase<i128> for IntegralSolver {
     fn new(n: i128, limits: Limits) -> Self {
         Self {
             n,

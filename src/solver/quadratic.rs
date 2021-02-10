@@ -2,7 +2,7 @@ use crate::expression::Expression;
 use crate::number::Number;
 use crate::number_theory::factorial_divide as fact_div;
 use crate::quadratic::{Quadratic, PRIMES};
-use crate::solver::base::{Limits, Solver, SolverPrivate, State};
+use crate::solver::base::{Limits, SolverBase, SolverPrivate, State};
 use num::traits::Pow;
 use num::{Signed, Zero};
 use std::collections::HashMap;
@@ -43,7 +43,7 @@ pub struct QuadraticSolver {
     limits: Limits,
 }
 
-impl Solver<Quadratic> for QuadraticSolver {
+impl SolverBase<Quadratic> for QuadraticSolver {
     fn new(n: i128, limits: Limits) -> Self {
         Self {
             n,
@@ -57,8 +57,12 @@ impl Solver<Quadratic> for QuadraticSolver {
         }
     }
 
-    fn solve(&mut self, target: i128, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)> {
-        self.target = Quadratic::from_int(target);
+    fn solve(
+        &mut self,
+        target: Quadratic,
+        max_depth: Option<usize>,
+    ) -> Option<(Rc<Expression>, usize)> {
+        self.target = target;
         if let Some((expression, digits)) = self.states.get(&self.target) {
             if max_depth.unwrap_or(usize::MAX) >= *digits {
                 return Some((expression.clone(), *digits));

@@ -1,5 +1,6 @@
+use num::rational::Ratio;
 use std::env;
-use tchisla_solver::{IntegralSolver, Limits, QuadraticSolver, RationalSolver, Solver};
+use tchisla_solver::*;
 
 fn parse_problem() -> Option<(i128, i128)> {
     let args: Vec<String> = env::args().collect();
@@ -42,7 +43,9 @@ fn main() {
                 max_quadratic_power: 2,
             },
         );
-        if let Some((expression, digits)) = rational_solver.solve(target, max_depth) {
+        if let Some((expression, digits)) =
+            rational_solver.solve(Ratio::from_integer(target), max_depth)
+        {
             println!("rational({}): {} = {}", digits, target, expression);
             max_depth = Some(digits - 1);
         }
@@ -54,7 +57,9 @@ fn main() {
                 max_quadratic_power: if n == 7 { 3 } else { 2 },
             },
         );
-        if let Some((expression, digits)) = quadratic_solver.solve(target, max_depth) {
+        if let Some((expression, digits)) =
+            quadratic_solver.solve(Quadratic::from_int(target), max_depth)
+        {
             println!("quadratic({}): {} = {}", digits, target, expression);
         }
         if max_depth.is_none() {
