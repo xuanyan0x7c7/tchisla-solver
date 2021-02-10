@@ -324,7 +324,8 @@ impl SolverPrivate<Quadratic> for QuadraticSolver {
     ) -> bool {
         let mut found = false;
         if x.rational_part().numer() < x.rational_part().denom() {
-            if self.check(x.subtract_integer(1).negate(), digits, || {
+            let result = x.subtract_integer(1).negate();
+            if self.check(result, digits, || {
                 Expression::from_divide(
                     Expression::from_subtract(denominator.clone(), numerator.clone()),
                     denominator.clone(),
@@ -332,8 +333,17 @@ impl SolverPrivate<Quadratic> for QuadraticSolver {
             }) {
                 found = true;
             }
+            if self.check(result.inverse(), digits, || {
+                Expression::from_divide(
+                    denominator.clone(),
+                    Expression::from_subtract(denominator.clone(), numerator.clone()),
+                )
+            }) {
+                found = true;
+            }
         } else if x.rational_part().numer() > x.rational_part().denom() {
-            if self.check(x.subtract_integer(1), digits, || {
+            let result = x.subtract_integer(1);
+            if self.check(result, digits, || {
                 Expression::from_divide(
                     Expression::from_subtract(numerator.clone(), denominator.clone()),
                     denominator.clone(),
@@ -341,11 +351,28 @@ impl SolverPrivate<Quadratic> for QuadraticSolver {
             }) {
                 found = true;
             }
+            if self.check(result.inverse(), digits, || {
+                Expression::from_divide(
+                    denominator.clone(),
+                    Expression::from_subtract(numerator.clone(), denominator.clone()),
+                )
+            }) {
+                found = true;
+            }
         }
-        if self.check(x.add_integer(1), digits, || {
+        let result = x.add_integer(1);
+        if self.check(result, digits, || {
             Expression::from_divide(
                 Expression::from_add(numerator.clone(), denominator.clone()),
                 denominator.clone(),
+            )
+        }) {
+            found = true;
+        }
+        if self.check(result.inverse(), digits, || {
+            Expression::from_divide(
+                denominator.clone(),
+                Expression::from_add(numerator.clone(), denominator.clone()),
             )
         }) {
             found = true;
