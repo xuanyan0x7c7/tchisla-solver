@@ -41,6 +41,7 @@ pub struct QuadraticSolver {
     depth_searched: usize,
     search_state: SearchState,
     limits: Limits,
+    progressive: bool,
     new_numbers: Vec<Quadratic>,
 }
 
@@ -55,6 +56,22 @@ impl SolverBase<Quadratic> for QuadraticSolver {
             depth_searched: 0,
             search_state: SearchState::None,
             limits,
+            progressive: false,
+            new_numbers: vec![],
+        }
+    }
+
+    fn new_progressive(n: i128, limits: Limits) -> Self {
+        Self {
+            n,
+            target: Quadratic::from_int(0),
+            states: HashMap::new(),
+            states_by_depth: vec![],
+            extra_states_by_depth: vec![],
+            depth_searched: 0,
+            search_state: SearchState::None,
+            limits,
+            progressive: true,
             new_numbers: vec![],
         }
     }
@@ -65,22 +82,19 @@ impl SolverBase<Quadratic> for QuadraticSolver {
         max_depth: Option<usize>,
     ) -> Option<(Rc<Expression>, usize)> {
         self.target = target;
-        self.new_numbers.clear();
         if let Some((expression, digits)) = self.get_solution(&self.target) {
-            if max_depth.unwrap_or(usize::MAX) >= *digits {
-                return Some((expression.clone(), *digits));
-            }
+            return if max_depth.unwrap_or(usize::MAX) >= *digits {
+                Some((expression.clone(), *digits))
+            } else {
+                None
+            };
         }
-        let mut digits = self.depth_searched;
-        loop {
-            digits += 1;
-            if digits > max_depth.unwrap_or(usize::MAX) {
-                return None;
-            }
+        for digits in self.depth_searched + 1..=max_depth.unwrap_or(usize::MAX) {
             if self.search(digits) {
                 return Some(self.states.get(&self.target).unwrap().clone());
             }
         }
+        None
     }
 
     #[inline]
@@ -97,6 +111,11 @@ impl SolverBase<Quadratic> for QuadraticSolver {
 
     fn new_numbers(&self) -> &Vec<Quadratic> {
         &self.new_numbers
+    }
+
+    #[inline]
+    fn clear_new_numbers(&mut self) {
+        self.new_numbers.clear();
     }
 }
 
@@ -118,7 +137,7 @@ impl SolverPrivate<Quadratic> for QuadraticSolver {
 
     fn need_unary_operation(&self, x: &State<Quadratic>) -> bool {
         self.n != 1
-            && *x.number.quadratic_power() == 0
+            && x.number.is_rational()
             && x.number.to_int() != Some(1)
             && x.expression.get_divide().is_some()
     }
@@ -128,27 +147,36 @@ impl SolverPrivate<Quadratic> for QuadraticSolver {
         if self.div(&x, &y) {
             found = true;
         }
-        if self.mul(&x, &y) {
-            found = true;
+        if !self.progressive || !x.number.is_rational() || !y.number.is_rational() {
+            if self.mul(&x, &y) {
+                found = true;
+            }
+            if x.number.quadratic_power() == y.number.quadratic_power()
+                && x.number.quadratic_part() == y.number.quadratic_part()
+            {
+                if self.add(&x, &y) {
+                    found = true;
+                }
+                if self.sub(&x, &y) {
+                    found = true;
+                }
+            }
         }
-        if x.number.quadratic_power() == y.number.quadratic_power()
-            && x.number.quadratic_part() == y.number.quadratic_part()
+        if y.number.to_int().is_some()
+            && (!self.progressive || !x.number.is_rational())
+            && self.pow(&x, &y)
         {
-            if self.add(&x, &y) {
-                found = true;
-            }
-            if self.sub(&x, &y) {
-                found = true;
-            }
-        }
-        if y.number.to_int().is_some() && self.pow(&x, &y) {
             found = true;
         }
-        if x.number.to_int().is_some() && self.pow(&y, &x) {
+        if x.number.to_int().is_some()
+            && (!self.progressive || !y.number.is_rational())
+            && self.pow(&y, &x)
+        {
             found = true;
         }
         if x.number.to_int().is_some()
             && y.number.to_int().is_some()
+            && !self.progressive
             && self.factorial_divide(&x, &y)
         {
             found = true;
@@ -168,12 +196,14 @@ impl SolverPrivate<Quadratic> for QuadraticSolver {
     }
 
     fn insert(&mut self, x: Quadratic, digits: usize, expression: Rc<Expression>) -> bool {
-        self.states.insert(x, (expression.clone(), digits));
+        self.states.insert(x, (expression, digits));
         if self.states_by_depth.len() <= digits {
             self.states_by_depth.resize(digits + 1, vec![]);
         }
         self.states_by_depth[digits].push(x);
-        self.new_numbers.push(x);
+        if self.progressive {
+            self.new_numbers.push(x);
+        }
         x == self.target
     }
 

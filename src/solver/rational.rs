@@ -29,6 +29,7 @@ pub struct RationalSolver {
     depth_searched: usize,
     search_state: SearchState,
     limits: Limits,
+    progressive: bool,
     new_numbers: Vec<Rational>,
 }
 
@@ -43,6 +44,22 @@ impl SolverBase<Rational> for RationalSolver {
             depth_searched: 0,
             search_state: SearchState::None,
             limits,
+            progressive: false,
+            new_numbers: vec![],
+        }
+    }
+
+    fn new_progressive(n: i128, limits: Limits) -> Self {
+        Self {
+            n,
+            target: Rational::zero(),
+            states: HashMap::new(),
+            states_by_depth: vec![],
+            extra_states_by_depth: vec![],
+            depth_searched: 0,
+            search_state: SearchState::None,
+            limits,
+            progressive: true,
             new_numbers: vec![],
         }
     }
@@ -53,22 +70,19 @@ impl SolverBase<Rational> for RationalSolver {
         max_depth: Option<usize>,
     ) -> Option<(Rc<Expression>, usize)> {
         self.target = target;
-        self.new_numbers.clear();
         if let Some((expression, digits)) = self.get_solution(&self.target) {
-            if max_depth.unwrap_or(usize::MAX) >= *digits {
-                return Some((expression.clone(), *digits));
-            }
+            return if max_depth.unwrap_or(usize::MAX) >= *digits {
+                Some((expression.clone(), *digits))
+            } else {
+                None
+            };
         }
-        let mut digits = self.depth_searched;
-        loop {
-            digits += 1;
-            if digits > max_depth.unwrap_or(usize::MAX) {
-                return None;
-            }
+        for digits in self.depth_searched + 1..=max_depth.unwrap_or(usize::MAX) {
             if self.search(digits) {
                 return Some(self.states.get(&self.target).unwrap().clone());
             }
         }
+        None
     }
 
     #[inline]
@@ -86,6 +100,11 @@ impl SolverBase<Rational> for RationalSolver {
     #[inline]
     fn new_numbers(&self) -> &Vec<Rational> {
         &self.new_numbers
+    }
+
+    #[inline]
+    fn clear_new_numbers(&mut self) {
+        self.new_numbers.clear();
     }
 }
 
@@ -114,14 +133,16 @@ impl SolverPrivate<Rational> for RationalSolver {
         if self.div(&x, &y) {
             found = true;
         }
-        if self.mul(&x, &y) {
-            found = true;
-        }
-        if self.add(&x, &y) {
-            found = true;
-        }
-        if self.sub(&x, &y) {
-            found = true;
+        if !self.progressive || !x.number.is_integer() || !y.number.is_integer() {
+            if self.mul(&x, &y) {
+                found = true;
+            }
+            if self.add(&x, &y) {
+                found = true;
+            }
+            if self.sub(&x, &y) {
+                found = true;
+            }
         }
         if y.number.is_integer() && self.pow(&x, &y) {
             found = true;
@@ -152,7 +173,9 @@ impl SolverPrivate<Rational> for RationalSolver {
             self.states_by_depth.resize(digits + 1, vec![]);
         }
         self.states_by_depth[digits].push(x);
-        self.new_numbers.push(x);
+        if self.progressive {
+            self.new_numbers.push(x);
+        }
         x == self.target
     }
 

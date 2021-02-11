@@ -17,6 +17,7 @@ pub struct State<T: Number> {
 
 pub trait SolverBase<T: Number>: SolverPrivate<T> {
     fn new(n: i128, limits: Limits) -> Self;
+    fn new_progressive(n: i128, limits: Limits) -> Self;
     fn solve(&mut self, target: T, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)>;
     fn get_solution(&self, x: &T) -> Option<&(Rc<Expression>, usize)>;
     fn try_insert(
@@ -29,6 +30,7 @@ pub trait SolverBase<T: Number>: SolverPrivate<T> {
     }
     fn insert_extra(&mut self, x: T, digits: usize, expression: Rc<Expression>);
     fn new_numbers(&self) -> &Vec<T>;
+    fn clear_new_numbers(&mut self);
 }
 
 pub trait SolverPrivate<T: Number> {
