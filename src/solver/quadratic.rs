@@ -41,6 +41,7 @@ pub struct QuadraticSolver {
     depth_searched: usize,
     search_state: SearchState,
     limits: Limits,
+    new_numbers: Vec<Quadratic>,
 }
 
 impl SolverBase<Quadratic> for QuadraticSolver {
@@ -54,6 +55,7 @@ impl SolverBase<Quadratic> for QuadraticSolver {
             depth_searched: 0,
             search_state: SearchState::None,
             limits,
+            new_numbers: vec![],
         }
     }
 
@@ -63,7 +65,8 @@ impl SolverBase<Quadratic> for QuadraticSolver {
         max_depth: Option<usize>,
     ) -> Option<(Rc<Expression>, usize)> {
         self.target = target;
-        if let Some((expression, digits)) = self.states.get(&self.target) {
+        self.new_numbers.clear();
+        if let Some((expression, digits)) = self.get_solution(&self.target) {
             if max_depth.unwrap_or(usize::MAX) >= *digits {
                 return Some((expression.clone(), *digits));
             }
@@ -80,11 +83,20 @@ impl SolverBase<Quadratic> for QuadraticSolver {
         }
     }
 
+    #[inline]
+    fn get_solution(&self, x: &Quadratic) -> Option<&(Rc<Expression>, usize)> {
+        self.states.get(x)
+    }
+
     fn insert_extra(&mut self, x: Quadratic, digits: usize, expression: Rc<Expression>) {
         if self.extra_states_by_depth.len() <= digits {
             self.extra_states_by_depth.resize(digits + 1, Vec::new());
         }
         self.extra_states_by_depth[digits].push((x, expression));
+    }
+
+    fn new_numbers(&self) -> &Vec<Quadratic> {
+        &self.new_numbers
     }
 }
 
@@ -156,8 +168,12 @@ impl SolverPrivate<Quadratic> for QuadraticSolver {
     }
 
     fn insert(&mut self, x: Quadratic, digits: usize, expression: Rc<Expression>) -> bool {
-        self.states.insert(x, (expression, digits));
+        self.states.insert(x, (expression.clone(), digits));
+        if self.states_by_depth.len() <= digits {
+            self.states_by_depth.resize(digits + 1, vec![]);
+        }
         self.states_by_depth[digits].push(x);
+        self.new_numbers.push(x);
         x == self.target
     }
 

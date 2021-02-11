@@ -29,6 +29,7 @@ pub struct RationalSolver {
     depth_searched: usize,
     search_state: SearchState,
     limits: Limits,
+    new_numbers: Vec<Rational>,
 }
 
 impl SolverBase<Rational> for RationalSolver {
@@ -42,6 +43,7 @@ impl SolverBase<Rational> for RationalSolver {
             depth_searched: 0,
             search_state: SearchState::None,
             limits,
+            new_numbers: vec![],
         }
     }
 
@@ -51,7 +53,8 @@ impl SolverBase<Rational> for RationalSolver {
         max_depth: Option<usize>,
     ) -> Option<(Rc<Expression>, usize)> {
         self.target = target;
-        if let Some((expression, digits)) = self.states.get(&self.target) {
+        self.new_numbers.clear();
+        if let Some((expression, digits)) = self.get_solution(&self.target) {
             if max_depth.unwrap_or(usize::MAX) >= *digits {
                 return Some((expression.clone(), *digits));
             }
@@ -68,11 +71,21 @@ impl SolverBase<Rational> for RationalSolver {
         }
     }
 
+    #[inline]
+    fn get_solution(&self, x: &Rational) -> Option<&(Rc<Expression>, usize)> {
+        self.states.get(x)
+    }
+
     fn insert_extra(&mut self, x: Rational, digits: usize, expression: Rc<Expression>) {
         if self.extra_states_by_depth.len() <= digits {
             self.extra_states_by_depth.resize(digits + 1, Vec::new());
         }
         self.extra_states_by_depth[digits].push((x, expression));
+    }
+
+    #[inline]
+    fn new_numbers(&self) -> &Vec<Rational> {
+        &self.new_numbers
     }
 }
 
@@ -135,7 +148,11 @@ impl SolverPrivate<Rational> for RationalSolver {
 
     fn insert(&mut self, x: Rational, digits: usize, expression: Rc<Expression>) -> bool {
         self.states.insert(x, (expression, digits));
+        if self.states_by_depth.len() <= digits {
+            self.states_by_depth.resize(digits + 1, vec![]);
+        }
         self.states_by_depth[digits].push(x);
+        self.new_numbers.push(x);
         x == self.target
     }
 

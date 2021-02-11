@@ -47,7 +47,7 @@ impl fmt::Display for Quadratic {
 impl Number for Quadratic {
     #[inline]
     fn from_int(x: i128) -> Self {
-        Quadratic {
+        Self {
             rational_part: Rational::from_integer(x),
             quadratic_part: [0; PRIMES.len()],
             quadratic_power: 0,
@@ -65,6 +65,14 @@ impl Number for Quadratic {
 }
 
 impl Quadratic {
+    pub fn from_rational(x: Rational) -> Self {
+        Self {
+            rational_part: x,
+            quadratic_part: [0; PRIMES.len()],
+            quadratic_power: 0,
+        }
+    }
+
     pub fn rational_part(&self) -> &Rational {
         &self.rational_part
     }
@@ -77,42 +85,42 @@ impl Quadratic {
         &self.quadratic_power
     }
 
-    pub fn negate(self) -> Quadratic {
-        Quadratic {
+    pub fn negate(self) -> Self {
+        Self {
             rational_part: -self.rational_part,
             quadratic_part: self.quadratic_part,
             quadratic_power: self.quadratic_power,
         }
     }
 
-    pub fn abs(self) -> Quadratic {
-        Quadratic {
+    pub fn abs(self) -> Self {
+        Self {
             rational_part: self.rational_part.abs(),
             quadratic_part: self.quadratic_part,
             quadratic_power: self.quadratic_power,
         }
     }
 
-    pub fn add(&self, rhs: &Quadratic) -> Quadratic {
-        Quadratic {
+    pub fn add(&self, rhs: &Self) -> Self {
+        Self {
             rational_part: self.rational_part + rhs.rational_part,
             quadratic_part: self.quadratic_part,
             quadratic_power: self.quadratic_power,
         }
     }
 
-    pub fn add_integer(&self, rhs: i128) -> Quadratic {
-        Quadratic {
+    pub fn add_integer(&self, rhs: i128) -> Self {
+        Self {
             rational_part: self.rational_part + Rational::from_integer(rhs),
             quadratic_part: self.quadratic_part,
             quadratic_power: self.quadratic_power,
         }
     }
 
-    pub fn try_add(&self, rhs: &Quadratic) -> Option<Quadratic> {
+    pub fn try_add(&self, rhs: &Self) -> Option<Self> {
         if self.quadratic_power == rhs.quadratic_power && self.quadratic_part == rhs.quadratic_part
         {
-            Some(Quadratic {
+            Some(Self {
                 rational_part: self.rational_part + rhs.rational_part,
                 quadratic_part: self.quadratic_part,
                 quadratic_power: self.quadratic_power,
@@ -122,26 +130,26 @@ impl Quadratic {
         }
     }
 
-    pub fn subtract(&self, rhs: &Quadratic) -> Quadratic {
-        Quadratic {
+    pub fn subtract(&self, rhs: &Self) -> Self {
+        Self {
             rational_part: self.rational_part - rhs.rational_part,
             quadratic_part: self.quadratic_part,
             quadratic_power: self.quadratic_power,
         }
     }
 
-    pub fn subtract_integer(&self, rhs: i128) -> Quadratic {
-        Quadratic {
+    pub fn subtract_integer(&self, rhs: i128) -> Self {
+        Self {
             rational_part: self.rational_part - Rational::from_integer(rhs),
             quadratic_part: self.quadratic_part,
             quadratic_power: self.quadratic_power,
         }
     }
 
-    pub fn try_subtract(&self, rhs: &Quadratic) -> Option<Quadratic> {
+    pub fn try_subtract(&self, rhs: &Self) -> Option<Self> {
         if self.quadratic_power == rhs.quadratic_power && self.quadratic_part == rhs.quadratic_part
         {
-            Some(Quadratic {
+            Some(Self {
                 rational_part: self.rational_part - rhs.rational_part,
                 quadratic_part: self.quadratic_part,
                 quadratic_power: self.quadratic_power,
@@ -151,12 +159,12 @@ impl Quadratic {
         }
     }
 
-    pub fn multiply(&self, rhs: &Quadratic) -> Quadratic {
+    pub fn multiply(&self, rhs: &Self) -> Self {
         let mut rational_part = self.rational_part * rhs.rational_part;
         let mut quadratic_part = [0u8; PRIMES.len()];
         let mut quadratic_power = u8::max(self.quadratic_power, rhs.quadratic_power);
         if rational_part.is_zero() {
-            return Quadratic {
+            return Self {
                 rational_part: Rational::zero(),
                 quadratic_part: quadratic_part,
                 quadratic_power: 0,
@@ -181,35 +189,35 @@ impl Quadratic {
                 }
             }
         }
-        Quadratic {
+        Self {
             rational_part,
             quadratic_part,
             quadratic_power,
         }
     }
 
-    pub fn multiply_integer(&self, rhs: i128) -> Quadratic {
-        Quadratic {
+    pub fn multiply_integer(&self, rhs: i128) -> Self {
+        Self {
             rational_part: self.rational_part * rhs,
             quadratic_part: self.quadratic_part,
             quadratic_power: self.quadratic_power,
         }
     }
 
-    pub fn multiply_rational(&self, rhs: Rational) -> Quadratic {
-        Quadratic {
+    pub fn multiply_rational(&self, rhs: Rational) -> Self {
+        Self {
             rational_part: self.rational_part * rhs,
             quadratic_part: self.quadratic_part,
             quadratic_power: self.quadratic_power,
         }
     }
 
-    pub fn divide(&self, rhs: &Quadratic) -> Quadratic {
+    pub fn divide(&self, rhs: &Self) -> Self {
         let mut rational_part = self.rational_part / rhs.rational_part;
         let mut quadratic_part = [0u8; PRIMES.len()];
         let mut quadratic_power = u8::max(self.quadratic_power, rhs.quadratic_power);
         if rational_part.is_zero() {
-            return Quadratic {
+            return Self {
                 rational_part: Rational::zero(),
                 quadratic_part: quadratic_part,
                 quadratic_power: 0,
@@ -233,30 +241,30 @@ impl Quadratic {
                 }
             }
         }
-        Quadratic {
+        Self {
             rational_part,
             quadratic_part,
             quadratic_power,
         }
     }
 
-    pub fn divide_integer(&self, rhs: i128) -> Quadratic {
-        Quadratic {
+    pub fn divide_integer(&self, rhs: i128) -> Self {
+        Self {
             rational_part: self.rational_part / rhs,
             quadratic_part: self.quadratic_part,
             quadratic_power: self.quadratic_power,
         }
     }
 
-    pub fn divide_rational(&self, rhs: Rational) -> Quadratic {
-        Quadratic {
+    pub fn divide_rational(&self, rhs: Rational) -> Self {
+        Self {
             rational_part: self.rational_part / rhs,
             quadratic_part: self.quadratic_part,
             quadratic_power: self.quadratic_power,
         }
     }
 
-    pub fn inverse(&self) -> Quadratic {
+    pub fn inverse(&self) -> Self {
         let mut rational_part = self.rational_part.inv();
         let mut quadratic_part = [0u8; PRIMES.len()];
         for i in 0..PRIMES.len() {
@@ -265,16 +273,16 @@ impl Quadratic {
                 quadratic_part[i] = (1 << self.quadratic_power) - self.quadratic_part[i];
             }
         }
-        Quadratic {
+        Self {
             rational_part,
             quadratic_part,
             quadratic_power: self.quadratic_power,
         }
     }
 
-    pub fn power(&self, power: i32) -> Quadratic {
+    pub fn power(&self, power: i32) -> Self {
         if power == 0 {
-            return Quadratic {
+            return Self {
                 rational_part: Rational::one(),
                 quadratic_part: [0; PRIMES.len()],
                 quadratic_power: 0,
@@ -294,14 +302,14 @@ impl Quadratic {
             rational_part *= Rational::from_integer(PRIMES[i]).pow(prime_power.0);
             quadratic_part[i] = prime_power.1 as u8;
         }
-        Quadratic {
+        Self {
             rational_part,
             quadratic_part,
             quadratic_power,
         }
     }
 
-    pub fn try_sqrt(&self) -> Option<Quadratic> {
+    pub fn try_sqrt(&self) -> Option<Self> {
         if self.rational_part.is_zero() {
             return Some(*self);
         } else if self.rational_part.is_negative() {
@@ -346,7 +354,7 @@ impl Quadratic {
         if quadratic_part.iter().all(|x| *x == 0) {
             quadratic_power = 0;
         }
-        Some(Quadratic {
+        Some(Self {
             rational_part: Rational::new_raw(numerator, denominator),
             quadratic_part,
             quadratic_power,
