@@ -33,7 +33,7 @@ enum SearchState {
 }
 
 pub struct QuadraticSolver {
-    n: i128,
+    n: i64,
     target: Quadratic,
     states: HashMap<Quadratic, (Rc<Expression>, usize)>,
     states_by_depth: Vec<Vec<Quadratic>>,
@@ -46,7 +46,7 @@ pub struct QuadraticSolver {
 }
 
 impl SolverBase<Quadratic> for QuadraticSolver {
-    fn new(n: i128, limits: Limits) -> Self {
+    fn new(n: i64, limits: Limits) -> Self {
         Self {
             n,
             target: Quadratic::from_int(0),
@@ -61,7 +61,7 @@ impl SolverBase<Quadratic> for QuadraticSolver {
         }
     }
 
-    fn new_progressive(n: i128, limits: Limits) -> Self {
+    fn new_progressive(n: i64, limits: Limits) -> Self {
         Self {
             n,
             target: Quadratic::from_int(0),
@@ -121,7 +121,7 @@ impl SolverBase<Quadratic> for QuadraticSolver {
 
 impl SolverPrivate<Quadratic> for QuadraticSolver {
     #[inline]
-    fn n(&self) -> i128 {
+    fn n(&self) -> i64 {
         self.n
     }
 
@@ -131,7 +131,7 @@ impl SolverPrivate<Quadratic> for QuadraticSolver {
     }
 
     #[inline]
-    fn max_factorial_limit(&self) -> i128 {
+    fn max_factorial_limit(&self) -> i64 {
         self.limits.max_factorial
     }
 
@@ -186,7 +186,7 @@ impl SolverPrivate<Quadratic> for QuadraticSolver {
 
     #[inline]
     fn range_check(&self, x: Quadratic) -> bool {
-        let limit = 1i128 << self.limits.max_digits as u32;
+        let limit = 1i64 << self.limits.max_digits as u32;
         *x.rational_part().numer() <= limit && *x.rational_part().denom() <= limit
     }
 
@@ -340,7 +340,7 @@ impl SolverPrivate<Quadratic> for QuadraticSolver {
             x_int = y_int;
             y_int = temp;
         }
-        if x_int <= self.max_factorial_limit() as i128
+        if x_int <= self.max_factorial_limit() as i64
             || y_int <= 2
             || x_int - y_int == 1
             || (x_int - y_int) as f64 * ((x_int as f64).log2() + (y_int as f64).log2())

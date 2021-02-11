@@ -61,15 +61,15 @@ fn _serialize_output(solution: Option<(Rc<Expression>, usize)>) -> JsValue {
 pub fn _solve_integral(n: i32, target: i32, config: &JsValue) -> JsValue {
     let config: Config = config.into_serde().unwrap();
     let mut solver = IntegralSolver::new(
-        n as i128,
+        n as i64,
         Limits {
             max_digits: config.max_digits,
-            max_factorial: config.max_factorial as i128,
+            max_factorial: config.max_factorial as i64,
             max_quadratic_power: 0,
         },
     );
     _serialize_output(solver.solve(
-        target as i128,
+        target as i64,
         if config.max_depth == 0 {
             None
         } else {
@@ -82,15 +82,15 @@ pub fn _solve_integral(n: i32, target: i32, config: &JsValue) -> JsValue {
 pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
     let config: Config = config.into_serde().unwrap();
     let mut solver = RationalSolver::new(
-        n as i128,
+        n as i64,
         Limits {
             max_digits: config.max_digits,
-            max_factorial: config.max_factorial as i128,
+            max_factorial: config.max_factorial as i64,
             max_quadratic_power: 0,
         },
     );
     _serialize_output(solver.solve(
-        Ratio::from_integer(target as i128),
+        Ratio::from_integer(target as i64),
         if config.max_depth == 0 {
             None
         } else {
@@ -103,15 +103,15 @@ pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
 pub fn _solve_quadratic(n: i32, target: i32, config: &JsValue) -> JsValue {
     let config: QuadraticConfig = config.into_serde().unwrap();
     let mut solver = QuadraticSolver::new(
-        n as i128,
+        n as i64,
         Limits {
             max_digits: config.max_digits,
-            max_factorial: config.max_factorial as i128,
+            max_factorial: config.max_factorial as i64,
             max_quadratic_power: config.max_quadratic_power,
         },
     );
     _serialize_output(solver.solve(
-        Quadratic::from_int(target as i128),
+        Quadratic::from_int(target as i64),
         if config.max_depth == 0 {
             None
         } else {
@@ -124,25 +124,25 @@ pub fn _solve_quadratic(n: i32, target: i32, config: &JsValue) -> JsValue {
 pub fn _solve_progressive(n: i32, target: i32, config: &JsValue) -> JsValue {
     let config: ProgressiveConfig = config.into_serde().unwrap();
     let mut solver = ProgressiveSolver::new(
-        n as i128,
+        n as i64,
         Limits {
             max_digits: config.integral_max_digits,
-            max_factorial: config.integral_max_factorial as i128,
+            max_factorial: config.integral_max_factorial as i64,
             max_quadratic_power: 0,
         },
         Limits {
             max_digits: config.rational_max_digits,
-            max_factorial: config.rational_max_factorial as i128,
+            max_factorial: config.rational_max_factorial as i64,
             max_quadratic_power: 0,
         },
         Limits {
             max_digits: config.quadratic_max_digits,
-            max_factorial: config.quadratic_max_factorial as i128,
+            max_factorial: config.quadratic_max_factorial as i64,
             max_quadratic_power: config.quadratic_max_quadratic_power,
         },
     );
     _serialize_output(solver.solve(
-        target as i128,
+        target as i64,
         if config.max_depth == 0 {
             None
         } else {

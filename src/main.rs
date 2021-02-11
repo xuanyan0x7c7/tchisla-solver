@@ -1,7 +1,7 @@
 use std::env;
 use tchisla_solver::*;
 
-fn parse_problem() -> Option<(i128, i128)> {
+fn parse_problem() -> Option<(i64, i64)> {
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
         return None;
@@ -42,8 +42,8 @@ fn main() {
                 max_quadratic_power: 0,
             },
             Limits {
-                max_digits: 32,
-                max_factorial: 14,
+                max_digits: 30,
+                max_factorial: 12,
                 max_quadratic_power: 0,
             },
             Limits {

@@ -6,9 +6,9 @@ use num::Integer;
 use num::{One, Signed, Zero};
 use std::fmt;
 
-type Rational = Ratio<i128>;
+type Rational = Ratio<i64>;
 
-pub const PRIMES: [i128; 4] = [2, 3, 5, 7];
+pub const PRIMES: [i64; 4] = [2, 3, 5, 7];
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct Quadratic {
@@ -22,7 +22,7 @@ impl fmt::Display for Quadratic {
         if self.is_rational() {
             write!(f, "{}", self.rational_part)
         } else {
-            let mut number_under_sqrt = 1i128;
+            let mut number_under_sqrt = 1i64;
             for i in 0..PRIMES.len() {
                 number_under_sqrt *= PRIMES[i].pow(self.quadratic_part[i] as u32);
             }
@@ -46,7 +46,7 @@ impl fmt::Display for Quadratic {
 
 impl Number for Quadratic {
     #[inline]
-    fn from_int(x: i128) -> Self {
+    fn from_int(x: i64) -> Self {
         Self {
             rational_part: Rational::from_integer(x),
             quadratic_part: [0; PRIMES.len()],
@@ -55,7 +55,7 @@ impl Number for Quadratic {
     }
 
     #[inline]
-    fn to_int(self) -> Option<i128> {
+    fn to_int(self) -> Option<i64> {
         if *self.quadratic_power() == 0 && *self.rational_part().denom() == 1 {
             Some(*self.rational_part().numer())
         } else {
@@ -121,7 +121,7 @@ impl Quadratic {
     }
 
     #[inline]
-    pub fn add_integer(&self, rhs: i128) -> Self {
+    pub fn add_integer(&self, rhs: i64) -> Self {
         Self {
             rational_part: self.rational_part + Rational::from_integer(rhs),
             quadratic_part: self.quadratic_part,
@@ -152,7 +152,7 @@ impl Quadratic {
     }
 
     #[inline]
-    pub fn subtract_integer(&self, rhs: i128) -> Self {
+    pub fn subtract_integer(&self, rhs: i64) -> Self {
         Self {
             rational_part: self.rational_part - Rational::from_integer(rhs),
             quadratic_part: self.quadratic_part,
@@ -211,7 +211,7 @@ impl Quadratic {
     }
 
     #[inline]
-    pub fn multiply_integer(&self, rhs: i128) -> Self {
+    pub fn multiply_integer(&self, rhs: i64) -> Self {
         Self {
             rational_part: self.rational_part * rhs,
             quadratic_part: self.quadratic_part,
@@ -265,7 +265,7 @@ impl Quadratic {
     }
 
     #[inline]
-    pub fn divide_integer(&self, rhs: i128) -> Self {
+    pub fn divide_integer(&self, rhs: i64) -> Self {
         Self {
             rational_part: self.rational_part / rhs,
             quadratic_part: self.quadratic_part,
@@ -337,26 +337,26 @@ impl Quadratic {
         let mut q = *self.rational_part.denom();
         let mut quadratic_part: [u8; PRIMES.len()] = self.quadratic_part;
         let mut quadratic_power = self.quadratic_power + 1;
-        let mut numerator = 1i128;
-        let mut denominator = 1i128;
+        let mut numerator = 1i64;
+        let mut denominator = 1i64;
         for i in 0..PRIMES.len() {
             let prime = PRIMES[i];
-            while p % (prime as i128).pow(2) == 0 {
+            while p % (prime as i64).pow(2) == 0 {
                 numerator *= prime;
-                p /= (prime as i128).pow(2);
+                p /= (prime as i64).pow(2);
             }
-            if p % (prime as i128) == 0 {
+            if p % (prime as i64) == 0 {
                 quadratic_part[i] |= 1 << (quadratic_power - 1);
-                p /= prime as i128;
+                p /= prime as i64;
             }
-            while q % (prime as i128).pow(2) == 0 {
+            while q % (prime as i64).pow(2) == 0 {
                 denominator *= prime;
-                q /= (prime as i128).pow(2);
+                q /= (prime as i64).pow(2);
             }
-            if q % (prime as i128) == 0 {
+            if q % (prime as i64) == 0 {
                 denominator *= prime;
                 quadratic_part[i] |= 1 << (quadratic_power - 1);
-                q /= prime as i128;
+                q /= prime as i64;
             }
         }
         if let Some(sqrt_p) = try_sqrt(p) {

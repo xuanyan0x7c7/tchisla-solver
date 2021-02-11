@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 pub struct Limits {
     pub max_digits: usize,
-    pub max_factorial: i128,
+    pub max_factorial: i64,
     pub max_quadratic_power: u8,
 }
 
@@ -16,8 +16,8 @@ pub struct State<T: Number> {
 }
 
 pub trait SolverBase<T: Number>: SolverPrivate<T> {
-    fn new(n: i128, limits: Limits) -> Self;
-    fn new_progressive(n: i128, limits: Limits) -> Self;
+    fn new(n: i64, limits: Limits) -> Self;
+    fn new_progressive(n: i64, limits: Limits) -> Self;
     fn solve(&mut self, target: T, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)>;
     fn get_solution(&self, x: &T) -> Option<&(Rc<Expression>, usize)>;
     fn try_insert(
@@ -34,9 +34,9 @@ pub trait SolverBase<T: Number>: SolverPrivate<T> {
 }
 
 pub trait SolverPrivate<T: Number> {
-    fn n(&self) -> i128;
+    fn n(&self) -> i64;
     fn max_digits(&self) -> usize;
-    fn max_factorial_limit(&self) -> i128;
+    fn max_factorial_limit(&self) -> i64;
 
     fn need_unary_operation(&self, x: &State<T>) -> bool;
 
@@ -117,7 +117,7 @@ pub trait SolverPrivate<T: Number> {
         if digits as f64 * 10f64.log2() - 9f64.log2() > self.max_digits() as f64 {
             return false;
         }
-        let x = (10i128.pow(digits as u32) - 1) / 9 * self.n();
+        let x = (10i64.pow(digits as u32) - 1) / 9 * self.n();
         self.check(T::from_int(x), digits, || Expression::from_number(x))
     }
 
@@ -130,7 +130,7 @@ pub trait SolverPrivate<T: Number> {
 
     fn factorial(&mut self, x: &State<T>) -> bool {
         if let Some(n) = x.number.to_int() {
-            if n < self.max_factorial_limit() as i128 {
+            if n < self.max_factorial_limit() as i64 {
                 self.check(T::from_int(fact(n)), x.digits, || {
                     Expression::from_factorial(x.expression.clone())
                 })

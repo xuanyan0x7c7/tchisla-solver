@@ -8,7 +8,7 @@ use num::{One, Signed, Zero};
 use std::collections::HashMap;
 use std::rc::Rc;
 
-type Rational = Ratio<i128>;
+type Rational = Ratio<i64>;
 
 enum SearchState {
     None,
@@ -21,7 +21,7 @@ enum SearchState {
 }
 
 pub struct RationalSolver {
-    n: i128,
+    n: i64,
     target: Rational,
     states: HashMap<Rational, (Rc<Expression>, usize)>,
     states_by_depth: Vec<Vec<Rational>>,
@@ -34,7 +34,7 @@ pub struct RationalSolver {
 }
 
 impl SolverBase<Rational> for RationalSolver {
-    fn new(n: i128, limits: Limits) -> Self {
+    fn new(n: i64, limits: Limits) -> Self {
         Self {
             n,
             target: Rational::zero(),
@@ -49,7 +49,7 @@ impl SolverBase<Rational> for RationalSolver {
         }
     }
 
-    fn new_progressive(n: i128, limits: Limits) -> Self {
+    fn new_progressive(n: i64, limits: Limits) -> Self {
         Self {
             n,
             target: Rational::zero(),
@@ -110,7 +110,7 @@ impl SolverBase<Rational> for RationalSolver {
 
 impl SolverPrivate<Rational> for RationalSolver {
     #[inline]
-    fn n(&self) -> i128 {
+    fn n(&self) -> i64 {
         self.n
     }
 
@@ -120,7 +120,7 @@ impl SolverPrivate<Rational> for RationalSolver {
     }
 
     #[inline]
-    fn max_factorial_limit(&self) -> i128 {
+    fn max_factorial_limit(&self) -> i64 {
         self.limits.max_factorial
     }
 
@@ -158,7 +158,7 @@ impl SolverPrivate<Rational> for RationalSolver {
 
     #[inline]
     fn range_check(&self, x: Rational) -> bool {
-        let limit = 1i128 << self.limits.max_digits;
+        let limit = 1i64 << self.limits.max_digits;
         *x.numer() <= limit && *x.denom() <= limit
     }
 
@@ -314,7 +314,7 @@ impl SolverPrivate<Rational> for RationalSolver {
             x_int = y_int;
             y_int = temp;
         }
-        if x_int <= self.max_factorial_limit() as i128
+        if x_int <= self.max_factorial_limit() as i64
             || y_int <= 2
             || x_int - y_int == 1
             || (x_int - y_int) as f64 * ((x_int as f64).log2() + (y_int as f64).log2())

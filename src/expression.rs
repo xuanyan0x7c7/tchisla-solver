@@ -2,7 +2,7 @@ use std::fmt;
 use std::rc::Rc;
 
 pub enum Expression {
-    Number(i128),
+    Number(i64),
     Negate(Rc<Expression>),
     Add(Rc<Expression>, Rc<Expression>),
     Subtract(Rc<Expression>, Rc<Expression>),
@@ -15,7 +15,7 @@ pub enum Expression {
 
 impl Expression {
     #[inline]
-    pub fn get_number(&self) -> Option<i128> {
+    pub fn get_number(&self) -> Option<i64> {
         match self {
             Expression::Number(x) => Some(*x),
             _ => None,
@@ -214,7 +214,7 @@ impl Expression {
         }
     }
 
-    pub fn from_number(x: i128) -> Rc<Expression> {
+    pub fn from_number(x: i64) -> Rc<Expression> {
         Rc::new(Expression::Number(x))
     }
 

@@ -15,20 +15,20 @@ enum SearchState {
 }
 
 pub struct IntegralSolver {
-    n: i128,
-    target: i128,
-    states: HashMap<i128, (Rc<Expression>, usize)>,
-    states_by_depth: Vec<Vec<i128>>,
-    extra_states_by_depth: Vec<Vec<(i128, Rc<Expression>)>>,
+    n: i64,
+    target: i64,
+    states: HashMap<i64, (Rc<Expression>, usize)>,
+    states_by_depth: Vec<Vec<i64>>,
+    extra_states_by_depth: Vec<Vec<(i64, Rc<Expression>)>>,
     depth_searched: usize,
     search_state: SearchState,
     limits: Limits,
     progressive: bool,
-    new_numbers: Vec<i128>,
+    new_numbers: Vec<i64>,
 }
 
-impl SolverBase<i128> for IntegralSolver {
-    fn new(n: i128, limits: Limits) -> Self {
+impl SolverBase<i64> for IntegralSolver {
+    fn new(n: i64, limits: Limits) -> Self {
         Self {
             n,
             target: 0,
@@ -43,7 +43,7 @@ impl SolverBase<i128> for IntegralSolver {
         }
     }
 
-    fn new_progressive(n: i128, limits: Limits) -> Self {
+    fn new_progressive(n: i64, limits: Limits) -> Self {
         Self {
             n,
             target: 0,
@@ -58,7 +58,7 @@ impl SolverBase<i128> for IntegralSolver {
         }
     }
 
-    fn solve(&mut self, target: i128, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)> {
+    fn solve(&mut self, target: i64, max_depth: Option<usize>) -> Option<(Rc<Expression>, usize)> {
         self.target = target;
         if let Some((expression, digits)) = self.get_solution(&self.target) {
             return if max_depth.unwrap_or(usize::MAX) >= *digits {
@@ -76,11 +76,11 @@ impl SolverBase<i128> for IntegralSolver {
     }
 
     #[inline]
-    fn get_solution(&self, x: &i128) -> Option<&(Rc<Expression>, usize)> {
+    fn get_solution(&self, x: &i64) -> Option<&(Rc<Expression>, usize)> {
         self.states.get(x)
     }
 
-    fn insert_extra(&mut self, x: i128, digits: usize, expression: Rc<Expression>) {
+    fn insert_extra(&mut self, x: i64, digits: usize, expression: Rc<Expression>) {
         if self.extra_states_by_depth.len() <= digits {
             self.extra_states_by_depth.resize(digits + 1, vec![]);
         }
@@ -88,7 +88,7 @@ impl SolverBase<i128> for IntegralSolver {
     }
 
     #[inline]
-    fn new_numbers(&self) -> &Vec<i128> {
+    fn new_numbers(&self) -> &Vec<i64> {
         &self.new_numbers
     }
 
@@ -98,9 +98,9 @@ impl SolverBase<i128> for IntegralSolver {
     }
 }
 
-impl SolverPrivate<i128> for IntegralSolver {
+impl SolverPrivate<i64> for IntegralSolver {
     #[inline]
-    fn n(&self) -> i128 {
+    fn n(&self) -> i64 {
         self.n
     }
 
@@ -110,15 +110,15 @@ impl SolverPrivate<i128> for IntegralSolver {
     }
 
     #[inline]
-    fn max_factorial_limit(&self) -> i128 {
+    fn max_factorial_limit(&self) -> i64 {
         self.limits.max_factorial
     }
 
-    fn need_unary_operation(&self, x: &State<i128>) -> bool {
+    fn need_unary_operation(&self, x: &State<i64>) -> bool {
         self.n != 1 && x.number != 1 && x.expression.get_divide().is_some()
     }
 
-    fn binary_operation(&mut self, x: State<i128>, y: State<i128>) -> bool {
+    fn binary_operation(&mut self, x: State<i64>, y: State<i64>) -> bool {
         let mut found = false;
         if self.div(&x, &y) {
             found = true;
@@ -145,16 +145,16 @@ impl SolverPrivate<i128> for IntegralSolver {
     }
 
     #[inline]
-    fn range_check(&self, x: i128) -> bool {
-        x <= 1i128 << self.limits.max_digits as u32
+    fn range_check(&self, x: i64) -> bool {
+        x <= 1i64 << self.limits.max_digits as u32
     }
 
     #[inline]
-    fn already_searched(&self, x: i128) -> bool {
+    fn already_searched(&self, x: i64) -> bool {
         self.states.contains_key(&x)
     }
 
-    fn insert(&mut self, x: i128, digits: usize, expression: Rc<Expression>) -> bool {
+    fn insert(&mut self, x: i64, digits: usize, expression: Rc<Expression>) -> bool {
         self.states.insert(x, (expression, digits));
         if self.states_by_depth.len() <= digits {
             self.states_by_depth.resize(digits + 1, vec![]);
@@ -166,13 +166,13 @@ impl SolverPrivate<i128> for IntegralSolver {
         x == self.target
     }
 
-    fn add(&mut self, x: &State<i128>, y: &State<i128>) -> bool {
+    fn add(&mut self, x: &State<i64>, y: &State<i64>) -> bool {
         self.check(x.number + y.number, x.digits + y.digits, || {
             Expression::from_add(x.expression.clone(), y.expression.clone())
         })
     }
 
-    fn sub(&mut self, x: &State<i128>, y: &State<i128>) -> bool {
+    fn sub(&mut self, x: &State<i64>, y: &State<i64>) -> bool {
         if x.number == y.number {
             return false;
         }
@@ -188,13 +188,17 @@ impl SolverPrivate<i128> for IntegralSolver {
         })
     }
 
-    fn mul(&mut self, x: &State<i128>, y: &State<i128>) -> bool {
-        self.check(x.number * y.number, x.digits + y.digits, || {
-            Expression::from_multiply(x.expression.clone(), y.expression.clone())
-        })
+    fn mul(&mut self, x: &State<i64>, y: &State<i64>) -> bool {
+        if let Some(z) = x.number.checked_mul(y.number) {
+            self.check(z, x.digits + y.digits, || {
+                Expression::from_multiply(x.expression.clone(), y.expression.clone())
+            })
+        } else {
+            false
+        }
     }
 
-    fn div(&mut self, x: &State<i128>, y: &State<i128>) -> bool {
+    fn div(&mut self, x: &State<i64>, y: &State<i64>) -> bool {
         if x.number == y.number {
             return if x.number == self.n {
                 self.check(1, 2, || {
@@ -220,7 +224,7 @@ impl SolverPrivate<i128> for IntegralSolver {
         }
     }
 
-    fn pow(&mut self, x: &State<i128>, y: &State<i128>) -> bool {
+    fn pow(&mut self, x: &State<i64>, y: &State<i64>) -> bool {
         if x.number == 1 || y.number == 1 {
             return false;
         }
@@ -246,7 +250,7 @@ impl SolverPrivate<i128> for IntegralSolver {
         })
     }
 
-    fn sqrt(&mut self, x: &State<i128>) -> bool {
+    fn sqrt(&mut self, x: &State<i64>) -> bool {
         if let Some(y) = try_sqrt(x.number) {
             self.check(y, x.digits, || {
                 Expression::from_sqrt(x.expression.clone(), 1)
@@ -256,7 +260,7 @@ impl SolverPrivate<i128> for IntegralSolver {
         }
     }
 
-    fn factorial_divide(&mut self, x: &State<i128>, y: &State<i128>) -> bool {
+    fn factorial_divide(&mut self, x: &State<i64>, y: &State<i64>) -> bool {
         if x.number == y.number {
             return false;
         }
@@ -267,7 +271,7 @@ impl SolverPrivate<i128> for IntegralSolver {
             x = y;
             y = temp;
         }
-        if x.number <= self.max_factorial_limit() as i128
+        if x.number <= self.max_factorial_limit() as i64
             || y.number <= 2
             || x.number - y.number == 1
             || (x.number - y.number) as f64 * ((x.number as f64).log2() + (y.number as f64).log2())
@@ -285,7 +289,7 @@ impl SolverPrivate<i128> for IntegralSolver {
 
     fn division_diff_one(
         &mut self,
-        x: i128,
+        x: i64,
         digits: usize,
         numerator: Rc<Expression>,
         denominator: Rc<Expression>,

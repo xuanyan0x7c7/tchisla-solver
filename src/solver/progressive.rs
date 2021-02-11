@@ -17,7 +17,7 @@ enum SearchState {
 }
 
 pub struct ProgressiveSolver {
-    target: i128,
+    target: i64,
     integral_solver: IntegralSolver,
     rational_solver: RationalSolver,
     quadratic_solver: QuadraticSolver,
@@ -27,7 +27,7 @@ pub struct ProgressiveSolver {
 
 impl ProgressiveSolver {
     pub fn new(
-        n: i128,
+        n: i64,
         integral_limits: Limits,
         rational_limits: Limits,
         quadratic_limits: Limits,
@@ -47,7 +47,7 @@ impl ProgressiveSolver {
 
     pub fn solve(
         &mut self,
-        target: i128,
+        target: i64,
         max_depth: Option<usize>,
     ) -> Option<(Rc<Expression>, usize)> {
         self.target = target;
@@ -66,7 +66,7 @@ impl ProgressiveSolver {
         None
     }
 
-    pub fn get_solution(&self, x: &i128) -> Option<&(Rc<Expression>, usize)> {
+    pub fn get_solution(&self, x: &i64) -> Option<&(Rc<Expression>, usize)> {
         self.integral_solver
             .get_solution(x)
             .or_else(|| self.rational_solver.get_solution(&Ratio::from_integer(*x)))
