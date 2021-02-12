@@ -1,12 +1,4 @@
-use crate::expression::Expression;
-use crate::solver::integral::IntegralSolver;
-use crate::solver::progressive::ProgressiveSolver;
-use crate::solver::quadratic::QuadraticSolver;
-use crate::solver::rational::RationalSolver;
-use crate::{
-    solver::base::{Limits, SolverBase},
-    Number, Quadratic,
-};
+use crate::{Expression, Limits, Number, ProgressiveSolver, Quadratic, Solver};
 use num::rational::Ratio;
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
@@ -60,7 +52,7 @@ fn _serialize_output(solution: Option<(Rc<Expression>, usize)>) -> JsValue {
 #[wasm_bindgen(js_name = solveIntegral)]
 pub fn _solve_integral(n: i32, target: i32, config: &JsValue) -> JsValue {
     let config: Config = config.into_serde().unwrap();
-    let mut solver = IntegralSolver::new(
+    let mut solver = Solver::<i64>::new(
         n as i64,
         Limits {
             max_digits: config.max_digits,
@@ -81,7 +73,7 @@ pub fn _solve_integral(n: i32, target: i32, config: &JsValue) -> JsValue {
 #[wasm_bindgen(js_name = solveRational)]
 pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
     let config: Config = config.into_serde().unwrap();
-    let mut solver = RationalSolver::new(
+    let mut solver = Solver::<Ratio<i64>>::new(
         n as i64,
         Limits {
             max_digits: config.max_digits,
@@ -102,7 +94,7 @@ pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
 #[wasm_bindgen(js_name = solveQuadratic)]
 pub fn _solve_quadratic(n: i32, target: i32, config: &JsValue) -> JsValue {
     let config: QuadraticConfig = config.into_serde().unwrap();
-    let mut solver = QuadraticSolver::new(
+    let mut solver = Solver::<Quadratic>::new(
         n as i64,
         Limits {
             max_digits: config.max_digits,

@@ -22,7 +22,7 @@ fn parse_problem() -> Option<(i64, i64)> {
 fn main() {
     if let Some((n, target)) = parse_problem() {
         let mut max_depth = None;
-        let mut integral_solver = IntegralSolver::new(
+        let mut integral_solver = Solver::<i64>::new(
             n,
             Limits {
                 max_digits: 48,

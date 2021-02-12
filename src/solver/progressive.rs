@@ -1,29 +1,9 @@
-use crate::expression::Expression;
-use crate::number::Number;
-use crate::quadratic::Quadratic;
-use crate::solver::base::{Limits, SolverBase};
-use crate::solver::integral::IntegralSolver;
-use crate::solver::quadratic::QuadraticSolver;
-use crate::solver::rational::RationalSolver;
+use super::{Limits, ProgressiveSearchState, ProgressiveSolver, Solver};
+use crate::{Expression, Number, Quadratic};
 use num::rational::Ratio;
 use std::rc::Rc;
 
-enum SearchState {
-    None,
-    Integral,
-    Rational,
-    Quadratic,
-    Finished,
-}
-
-pub struct ProgressiveSolver {
-    target: i64,
-    integral_solver: IntegralSolver,
-    rational_solver: RationalSolver,
-    quadratic_solver: QuadraticSolver,
-    depth_searched: usize,
-    search_state: SearchState,
-}
+type Rational = Ratio<i64>;
 
 impl ProgressiveSolver {
     pub fn new(
@@ -32,16 +12,16 @@ impl ProgressiveSolver {
         rational_limits: Limits,
         quadratic_limits: Limits,
     ) -> Self {
-        let integral_solver = IntegralSolver::new_progressive(n, integral_limits);
-        let rational_solver = RationalSolver::new_progressive(n, rational_limits);
-        let quadratic_solver = QuadraticSolver::new_progressive(n, quadratic_limits);
+        let integral_solver = Solver::<i64>::new_progressive(n, integral_limits);
+        let rational_solver = Solver::<Rational>::new_progressive(n, rational_limits);
+        let quadratic_solver = Solver::<Quadratic>::new_progressive(n, quadratic_limits);
         Self {
             target: 0,
             integral_solver,
             rational_solver,
             quadratic_solver,
             depth_searched: 0,
-            search_state: SearchState::None,
+            search_state: ProgressiveSearchState::None,
         }
     }
 
@@ -75,13 +55,13 @@ impl ProgressiveSolver {
 
     fn search(&mut self, digits: usize) -> bool {
         match self.search_state {
-            SearchState::None => {
-                self.search_state = SearchState::Integral;
+            ProgressiveSearchState::None => {
+                self.search_state = ProgressiveSearchState::Integral;
             }
             _ => {}
         }
         match self.search_state {
-            SearchState::Integral => {
+            ProgressiveSearchState::Integral => {
                 if self
                     .integral_solver
                     .solve(self.target, Some(digits))
@@ -99,12 +79,12 @@ impl ProgressiveSolver {
                 self.integral_solver.clear_new_numbers();
                 self.rational_solver.clear_new_numbers();
                 self.quadratic_solver.clear_new_numbers();
-                self.search_state = SearchState::Rational;
+                self.search_state = ProgressiveSearchState::Rational;
             }
             _ => {}
         }
         match self.search_state {
-            SearchState::Rational => {
+            ProgressiveSearchState::Rational => {
                 if self
                     .rational_solver
                     .solve(Ratio::from_integer(self.target), Some(digits))
@@ -124,12 +104,12 @@ impl ProgressiveSolver {
                 self.integral_solver.clear_new_numbers();
                 self.rational_solver.clear_new_numbers();
                 self.quadratic_solver.clear_new_numbers();
-                self.search_state = SearchState::Quadratic;
+                self.search_state = ProgressiveSearchState::Quadratic;
             }
             _ => {}
         }
         match self.search_state {
-            SearchState::Quadratic => {
+            ProgressiveSearchState::Quadratic => {
                 if self
                     .quadratic_solver
                     .solve(Quadratic::from_int(self.target), Some(digits))
@@ -151,12 +131,12 @@ impl ProgressiveSolver {
                 self.integral_solver.clear_new_numbers();
                 self.rational_solver.clear_new_numbers();
                 self.quadratic_solver.clear_new_numbers();
-                self.search_state = SearchState::Finished;
+                self.search_state = ProgressiveSearchState::Finished;
             }
             _ => {}
         }
         self.depth_searched = digits;
-        self.search_state = SearchState::None;
+        self.search_state = ProgressiveSearchState::None;
         false
     }
 }

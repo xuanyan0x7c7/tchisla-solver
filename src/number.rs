@@ -1,7 +1,8 @@
 use num::rational::Ratio;
 use std::fmt::Display;
+use std::hash::Hash;
 
-pub trait Number: Copy + Display + Eq {
+pub trait Number: Copy + Display + Eq + Hash {
     fn from_int(x: i64) -> Self;
     fn to_int(self) -> Option<i64>;
 }

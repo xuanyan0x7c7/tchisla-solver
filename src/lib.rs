@@ -1,3 +1,4 @@
+#![feature(min_specialization)]
 mod expression;
 mod number;
 mod number_theory;
@@ -8,8 +9,4 @@ mod wasm;
 pub use expression::Expression;
 pub use number::Number;
 pub use quadratic::Quadratic;
-pub use solver::base::{Limits, SolverBase};
-pub use solver::integral::IntegralSolver;
-pub use solver::progressive::ProgressiveSolver;
-pub use solver::quadratic::QuadraticSolver;
-pub use solver::rational::RationalSolver;
+pub use solver::{Limits, ProgressiveSolver, Solver};
