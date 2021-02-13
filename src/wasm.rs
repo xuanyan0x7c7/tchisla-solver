@@ -1,4 +1,4 @@
-use crate::{Expression, Limits, Number, ProgressiveSolver, Quadratic, Solver};
+use crate::*;
 use num::rational::Ratio;
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
@@ -91,10 +91,10 @@ pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
     ))
 }
 
-#[wasm_bindgen(js_name = solveQuadratic)]
-pub fn _solve_quadratic(n: i32, target: i32, config: &JsValue) -> JsValue {
+#[wasm_bindgen(js_name = solveIntegralQuadratic)]
+pub fn _solve_integral_quadratic(n: i32, target: i32, config: &JsValue) -> JsValue {
     let config: QuadraticConfig = config.into_serde().unwrap();
-    let mut solver = Solver::<Quadratic>::new(
+    let mut solver = Solver::<IntegralQuadratic>::new(
         n as i64,
         Limits {
             max_digits: config.max_digits,
@@ -103,7 +103,28 @@ pub fn _solve_quadratic(n: i32, target: i32, config: &JsValue) -> JsValue {
         },
     );
     _serialize_output(solver.solve(
-        Quadratic::from_int(target as i64),
+        IntegralQuadratic::from_int(target as i64),
+        if config.max_depth == 0 {
+            None
+        } else {
+            Some(config.max_depth)
+        },
+    ))
+}
+
+#[wasm_bindgen(js_name = solveRatinoalQuadratic)]
+pub fn _solve_ratinoal_quadratic(n: i32, target: i32, config: &JsValue) -> JsValue {
+    let config: QuadraticConfig = config.into_serde().unwrap();
+    let mut solver = Solver::<RationalQuadratic>::new(
+        n as i64,
+        Limits {
+            max_digits: config.max_digits,
+            max_factorial: config.max_factorial as i64,
+            max_quadratic_power: config.max_quadratic_power,
+        },
+    );
+    _serialize_output(solver.solve(
+        RationalQuadratic::from_int(target as i64),
         if config.max_depth == 0 {
             None
         } else {

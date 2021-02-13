@@ -1,6 +1,6 @@
 use super::{Solver, State, UnaryOperation};
-use crate::number_theory::{factorial as fact, try_sqrt};
-use crate::{Expression, Number, Quadratic};
+use crate::number_theory::{factorial, try_sqrt};
+use crate::{Expression, IntegralQuadratic, Number, RationalQuadratic};
 use num::rational::Ratio;
 use num::traits::Inv;
 use num::One;
@@ -79,7 +79,7 @@ impl<T: Number> UnaryOperation<T> for Solver<T> {
     fn factorial(&mut self, x: &State<T>) -> bool {
         if let Some(n) = x.number.to_int() {
             if n < self.limits.max_factorial as i64 {
-                self.check(T::from_int(fact(n)), x.digits, || {
+                self.check(T::from_int(factorial(n)), x.digits, || {
                     Expression::from_factorial(x.expression.clone())
                 })
             } else {
@@ -231,15 +231,12 @@ impl UnaryOperation<Rational> for Solver<Rational> {
     }
 }
 
-impl UnaryOperation<Quadratic> for Solver<Quadratic> {
-    fn need_unary_operation(&self, x: &State<Quadratic>) -> bool {
-        self.n != 1
-            && x.number.is_rational()
-            && x.number.to_int() != Some(1)
-            && x.expression.get_divide().is_some()
+impl UnaryOperation<IntegralQuadratic> for Solver<IntegralQuadratic> {
+    fn need_unary_operation(&self, x: &State<IntegralQuadratic>) -> bool {
+        self.n != 1 && x.number.to_int().unwrap_or(1) != 1 && x.expression.get_divide().is_some()
     }
 
-    fn sqrt(&mut self, x: &State<Quadratic>) -> bool {
+    fn sqrt(&mut self, x: &State<IntegralQuadratic>) -> bool {
         if *x.number.quadratic_power() < self.limits.max_quadratic_power {
             if let Some(result) = x.number.try_sqrt() {
                 self.check(result, x.digits, || {
@@ -255,7 +252,59 @@ impl UnaryOperation<Quadratic> for Solver<Quadratic> {
 
     fn division_diff_one(
         &mut self,
-        x: Quadratic,
+        x: IntegralQuadratic,
+        digits: usize,
+        numerator: Rc<Expression>,
+        denominator: Rc<Expression>,
+    ) -> bool {
+        let mut found = false;
+        if *x.integral_part() > 1 {
+            if self.check(x.subtract_integer(1), digits, || {
+                Expression::from_divide(
+                    Expression::from_subtract(numerator.clone(), denominator.clone()),
+                    denominator.clone(),
+                )
+            }) {
+                found = true;
+            }
+        }
+        if self.check(x.add_integer(1), digits, || {
+            Expression::from_divide(
+                Expression::from_add(numerator.clone(), denominator.clone()),
+                denominator.clone(),
+            )
+        }) {
+            found = true;
+        }
+        found
+    }
+}
+
+impl UnaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
+    fn need_unary_operation(&self, x: &State<RationalQuadratic>) -> bool {
+        self.n != 1
+            && x.number.is_rational()
+            && x.number.to_int() != Some(1)
+            && x.expression.get_divide().is_some()
+    }
+
+    fn sqrt(&mut self, x: &State<RationalQuadratic>) -> bool {
+        if *x.number.quadratic_power() < self.limits.max_quadratic_power {
+            if let Some(result) = x.number.try_sqrt() {
+                self.check(result, x.digits, || {
+                    Expression::from_sqrt(x.expression.clone(), 1)
+                })
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    fn division_diff_one(
+        &mut self,
+        x: RationalQuadratic,
         digits: usize,
         numerator: Rc<Expression>,
         denominator: Rc<Expression>,

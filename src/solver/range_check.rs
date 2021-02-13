@@ -1,5 +1,5 @@
 use super::{RangeCheck, Solver};
-use crate::{Number, Quadratic};
+use crate::{IntegralQuadratic, Number, RationalQuadratic};
 use num::rational::Ratio;
 
 type Rational = Ratio<i64>;
@@ -24,9 +24,17 @@ impl RangeCheck<Rational> for Solver<Rational> {
     }
 }
 
-impl RangeCheck<Quadratic> for Solver<Quadratic> {
+impl RangeCheck<IntegralQuadratic> for Solver<IntegralQuadratic> {
     #[inline]
-    fn range_check(&self, x: Quadratic) -> bool {
+    fn range_check(&self, x: IntegralQuadratic) -> bool {
+        *x.integral_part() <= 1i64 << self.limits.max_digits
+            && *x.quadratic_power() <= self.limits.max_quadratic_power
+    }
+}
+
+impl RangeCheck<RationalQuadratic> for Solver<RationalQuadratic> {
+    #[inline]
+    fn range_check(&self, x: RationalQuadratic) -> bool {
         *x.rational_part().numer() <= 1i64 << self.limits.max_digits
             && *x.rational_part().denom() <= 1i64 << self.limits.max_digits
             && *x.quadratic_power() <= self.limits.max_quadratic_power

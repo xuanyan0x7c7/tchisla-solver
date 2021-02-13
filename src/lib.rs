@@ -8,5 +8,5 @@ mod wasm;
 
 pub use expression::Expression;
 pub use number::Number;
-pub use quadratic::Quadratic;
+pub use quadratic::{IntegralQuadratic, RationalQuadratic, PRIMES};
 pub use solver::{Limits, ProgressiveSolver, Solver};

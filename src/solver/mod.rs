@@ -1,4 +1,4 @@
-use crate::{Expression, Number, Quadratic};
+use crate::{Expression, Number, RationalQuadratic};
 use num::rational::Ratio;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -7,7 +7,7 @@ mod binary_operation;
 mod progressive;
 mod range_check;
 mod searcher;
-pub mod solver;
+mod solver;
 mod unary_operation;
 
 type Rational = Ratio<i64>;
@@ -85,7 +85,7 @@ enum ProgressiveSearchState {
     None,
     Integral,
     Rational,
-    Quadratic,
+    RationalQuadratic,
     Finished,
 }
 
@@ -93,7 +93,7 @@ pub struct ProgressiveSolver {
     target: i64,
     integral_solver: Solver<i64>,
     rational_solver: Solver<Rational>,
-    quadratic_solver: Solver<Quadratic>,
+    rational_quadratic_solver: Solver<RationalQuadratic>,
     depth_searched: usize,
     search_state: ProgressiveSearchState,
 }

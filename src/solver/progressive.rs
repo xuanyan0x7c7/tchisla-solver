@@ -1,5 +1,5 @@
 use super::{Limits, ProgressiveSearchState, ProgressiveSolver, Solver};
-use crate::{Expression, Number, Quadratic};
+use crate::{Expression, Number, RationalQuadratic};
 use num::rational::Ratio;
 use std::rc::Rc;
 
@@ -14,12 +14,13 @@ impl ProgressiveSolver {
     ) -> Self {
         let integral_solver = Solver::<i64>::new_progressive(n, integral_limits);
         let rational_solver = Solver::<Rational>::new_progressive(n, rational_limits);
-        let quadratic_solver = Solver::<Quadratic>::new_progressive(n, quadratic_limits);
+        let rational_quadratic_solver =
+            Solver::<RationalQuadratic>::new_progressive(n, quadratic_limits);
         Self {
             target: 0,
             integral_solver,
             rational_solver,
-            quadratic_solver,
+            rational_quadratic_solver,
             depth_searched: 0,
             search_state: ProgressiveSearchState::None,
         }
@@ -50,7 +51,10 @@ impl ProgressiveSolver {
         self.integral_solver
             .get_solution(x)
             .or_else(|| self.rational_solver.get_solution(&Ratio::from_integer(*x)))
-            .or_else(|| self.quadratic_solver.get_solution(&Quadratic::from_int(*x)))
+            .or_else(|| {
+                self.rational_quadratic_solver
+                    .get_solution(&RationalQuadratic::from_int(*x))
+            })
     }
 
     fn search(&mut self, digits: usize) -> bool {
@@ -73,12 +77,15 @@ impl ProgressiveSolver {
                     let (expression, _) = self.integral_solver.get_solution(x).unwrap();
                     self.rational_solver
                         .try_insert(Ratio::from_integer(*x), digits, || expression.clone());
-                    self.quadratic_solver
-                        .try_insert(Quadratic::from_int(*x), digits, || expression.clone());
+                    self.rational_quadratic_solver.try_insert(
+                        RationalQuadratic::from_int(*x),
+                        digits,
+                        || expression.clone(),
+                    );
                 }
                 self.integral_solver.clear_new_numbers();
                 self.rational_solver.clear_new_numbers();
-                self.quadratic_solver.clear_new_numbers();
+                self.rational_quadratic_solver.clear_new_numbers();
                 self.search_state = ProgressiveSearchState::Rational;
             }
             _ => {}
@@ -98,27 +105,31 @@ impl ProgressiveSolver {
                         self.integral_solver
                             .try_insert(x_int, digits, || expression.clone());
                     }
-                    self.quadratic_solver
-                        .try_insert(Quadratic::from_rational(*x), digits, || expression.clone());
+                    self.rational_quadratic_solver.try_insert(
+                        RationalQuadratic::from_rational(*x),
+                        digits,
+                        || expression.clone(),
+                    );
                 }
                 self.integral_solver.clear_new_numbers();
                 self.rational_solver.clear_new_numbers();
-                self.quadratic_solver.clear_new_numbers();
-                self.search_state = ProgressiveSearchState::Quadratic;
+                self.rational_quadratic_solver.clear_new_numbers();
+                self.search_state = ProgressiveSearchState::RationalQuadratic;
             }
             _ => {}
         }
         match self.search_state {
-            ProgressiveSearchState::Quadratic => {
+            ProgressiveSearchState::RationalQuadratic => {
                 if self
-                    .quadratic_solver
-                    .solve(Quadratic::from_int(self.target), Some(digits))
+                    .rational_quadratic_solver
+                    .solve(RationalQuadratic::from_int(self.target), Some(digits))
                     .is_some()
                 {
                     return true;
                 }
-                for x in self.quadratic_solver.new_numbers().iter() {
-                    let (expression, digits) = self.quadratic_solver.get_solution(x).unwrap();
+                for x in self.rational_quadratic_solver.new_numbers().iter() {
+                    let (expression, digits) =
+                        self.rational_quadratic_solver.get_solution(x).unwrap();
                     if let Some(x_int) = x.to_int() {
                         self.integral_solver
                             .try_insert(x_int, *digits, || expression.clone());
@@ -130,7 +141,7 @@ impl ProgressiveSolver {
                 }
                 self.integral_solver.clear_new_numbers();
                 self.rational_solver.clear_new_numbers();
-                self.quadratic_solver.clear_new_numbers();
+                self.rational_quadratic_solver.clear_new_numbers();
                 self.search_state = ProgressiveSearchState::Finished;
             }
             _ => {}
