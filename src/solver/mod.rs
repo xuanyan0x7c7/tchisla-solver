@@ -1,5 +1,5 @@
 use crate::{Expression, Number, RationalQuadratic};
-use num::rational::Ratio;
+use num::rational::Rational64;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -9,8 +9,6 @@ mod range_check;
 mod searcher;
 mod solver;
 mod unary_operation;
-
-type Rational = Ratio<i64>;
 
 pub struct Limits {
     pub max_digits: usize,
@@ -53,7 +51,6 @@ trait RangeCheck<T: Number> {
 
 trait UnaryOperation<T: Number> {
     fn unary_operation(&mut self, x: State<T>) -> bool;
-    fn need_unary_operation(&self, x: &State<T>) -> bool;
     fn concat(&mut self, digits: usize) -> bool;
     fn sqrt(&mut self, x: &State<T>) -> bool;
     fn factorial(&mut self, x: &State<T>) -> bool;
@@ -92,7 +89,7 @@ enum ProgressiveSearchState {
 pub struct ProgressiveSolver {
     target: i64,
     integral_solver: Solver<i64>,
-    rational_solver: Solver<Rational>,
+    rational_solver: Solver<Rational64>,
     rational_quadratic_solver: Solver<RationalQuadratic>,
     depth_searched: usize,
     search_state: ProgressiveSearchState,

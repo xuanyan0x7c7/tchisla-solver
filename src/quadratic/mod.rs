@@ -1,4 +1,4 @@
-use num::rational::Ratio;
+use num::rational::Rational64;
 
 mod integral;
 mod rational;
@@ -14,7 +14,9 @@ pub struct IntegralQuadratic {
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct RationalQuadratic {
-    rational_part: Ratio<i64>,
+    rational_part: Rational64,
     quadratic_part: [u8; PRIMES.len()],
     quadratic_power: u8,
 }
+
+pub struct ParseQuadraticError {}

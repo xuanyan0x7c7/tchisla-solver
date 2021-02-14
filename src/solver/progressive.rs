@@ -1,9 +1,7 @@
 use super::{Limits, ProgressiveSearchState, ProgressiveSolver, Solver};
 use crate::{Expression, Number, RationalQuadratic};
-use num::rational::Ratio;
+use num::rational::Rational64;
 use std::rc::Rc;
-
-type Rational = Ratio<i64>;
 
 impl ProgressiveSolver {
     pub fn new(
@@ -13,7 +11,7 @@ impl ProgressiveSolver {
         quadratic_limits: Limits,
     ) -> Self {
         let integral_solver = Solver::<i64>::new_progressive(n, integral_limits);
-        let rational_solver = Solver::<Rational>::new_progressive(n, rational_limits);
+        let rational_solver = Solver::<Rational64>::new_progressive(n, rational_limits);
         let rational_quadratic_solver =
             Solver::<RationalQuadratic>::new_progressive(n, quadratic_limits);
         Self {
@@ -50,7 +48,10 @@ impl ProgressiveSolver {
     pub fn get_solution(&self, x: &i64) -> Option<&(Rc<Expression>, usize)> {
         self.integral_solver
             .get_solution(x)
-            .or_else(|| self.rational_solver.get_solution(&Ratio::from_integer(*x)))
+            .or_else(|| {
+                self.rational_solver
+                    .get_solution(&Rational64::from_integer(*x))
+            })
             .or_else(|| {
                 self.rational_quadratic_solver
                     .get_solution(&RationalQuadratic::from_int(*x))
@@ -76,7 +77,7 @@ impl ProgressiveSolver {
                 for x in self.integral_solver.new_numbers().iter() {
                     let (expression, _) = self.integral_solver.get_solution(x).unwrap();
                     self.rational_solver
-                        .try_insert(Ratio::from_integer(*x), digits, || expression.clone());
+                        .try_insert(Rational64::from_integer(*x), digits, || expression.clone());
                     self.rational_quadratic_solver.try_insert(
                         RationalQuadratic::from_int(*x),
                         digits,
@@ -94,7 +95,7 @@ impl ProgressiveSolver {
             ProgressiveSearchState::Rational => {
                 if self
                     .rational_solver
-                    .solve(Ratio::from_integer(self.target), Some(digits))
+                    .solve(Rational64::from_integer(self.target), Some(digits))
                     .is_some()
                 {
                     return true;
@@ -136,7 +137,7 @@ impl ProgressiveSolver {
                     }
                     if x.is_rational() {
                         self.rational_solver
-                            .try_insert(*x.rational_part(), *digits, || expression.clone());
+                            .try_insert(x.rational_part(), *digits, || expression.clone());
                     }
                 }
                 self.integral_solver.clear_new_numbers();

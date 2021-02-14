@@ -1,5 +1,5 @@
 use crate::*;
-use num::rational::Ratio;
+use num::rational::Rational64;
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -73,7 +73,7 @@ pub fn _solve_integral(n: i32, target: i32, config: &JsValue) -> JsValue {
 #[wasm_bindgen(js_name = solveRational)]
 pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
     let config: Config = config.into_serde().unwrap();
-    let mut solver = Solver::<Ratio<i64>>::new(
+    let mut solver = Solver::<Rational64>::new(
         n as i64,
         Limits {
             max_digits: config.max_digits,
@@ -82,7 +82,7 @@ pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
         },
     );
     _serialize_output(solver.solve(
-        Ratio::from_integer(target as i64),
+        Rational64::from_integer(target as i64),
         if config.max_depth == 0 {
             None
         } else {
