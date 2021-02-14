@@ -60,14 +60,32 @@ impl<T: Number> Solver<T> {
         self.states.get(x)
     }
 
-    #[inline]
     pub fn try_insert(
         &mut self,
         x: T,
         digits: usize,
-        expression_fn: impl Fn() -> Rc<Expression>,
+        expression_fn: impl FnOnce() -> Rc<Expression>,
     ) -> bool {
-        self.check(x, digits, expression_fn)
+        if !self.range_check(x) || self.get_solution(&x).is_some() {
+            return false;
+        }
+        let expression = expression_fn();
+        let mut found = false;
+        if self.insert(x, digits, expression.clone()) {
+            found = true;
+        }
+        let state = State {
+            number: x,
+            digits,
+            expression,
+        };
+        if self.sqrt(&state) {
+            found = true;
+        }
+        if x.is_int() && self.factorial(&state) {
+            found = true;
+        }
+        found
     }
 
     pub fn insert_extra(&mut self, x: T, digits: usize, expression: Rc<Expression>) {
@@ -97,31 +115,5 @@ impl<T: Number> Solver<T> {
             self.new_numbers.push(x);
         }
         x == self.target
-    }
-
-    pub(super) fn check<F>(&mut self, x: T, digits: usize, expression_fn: F) -> bool
-    where
-        F: FnOnce() -> Rc<Expression>,
-    {
-        if !self.range_check(x) || self.get_solution(&x).is_some() {
-            return false;
-        }
-        let expression = expression_fn();
-        let mut found = false;
-        if self.insert(x, digits, expression.clone()) {
-            found = true;
-        }
-        let state = State {
-            number: x,
-            digits,
-            expression,
-        };
-        if self.sqrt(&state) {
-            found = true;
-        }
-        if x.to_int().is_some() && self.factorial(&state) {
-            found = true;
-        }
-        found
     }
 }

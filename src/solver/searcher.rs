@@ -26,7 +26,7 @@ impl<T: Number> Searcher<T> for Solver<T> {
                     for i in start..l {
                         self.search_state = SearchState::ExtraState(i + 1);
                         let (number, expression) = self.extra_states_by_depth[digits][i].clone();
-                        if self.check(number, digits, || expression) {
+                        if self.try_insert(number, digits, || expression) {
                             return true;
                         }
                     }

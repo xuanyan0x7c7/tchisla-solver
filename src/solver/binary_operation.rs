@@ -56,7 +56,7 @@ impl<T: Number> BinaryOperation<T> for Solver<T> {
     }
 
     default fn add(&mut self, x: &State<T>, y: &State<T>) -> bool {
-        self.check(x.number + y.number, x.digits + y.digits, || {
+        self.try_insert(x.number + y.number, x.digits + y.digits, || {
             Expression::from_add(x.expression.clone(), y.expression.clone())
         })
     }
@@ -66,18 +66,18 @@ impl<T: Number> BinaryOperation<T> for Solver<T> {
         if result.is_zero() {
             false
         } else if result.is_negative() {
-            self.check(-result, x.digits + y.digits, || {
+            self.try_insert(-result, x.digits + y.digits, || {
                 Expression::from_subtract(y.expression.clone(), x.expression.clone())
             })
         } else {
-            self.check(result, x.digits + y.digits, || {
+            self.try_insert(result, x.digits + y.digits, || {
                 Expression::from_subtract(x.expression.clone(), y.expression.clone())
             })
         }
     }
 
     default fn multiply(&mut self, x: &State<T>, y: &State<T>) -> bool {
-        self.check(x.number * y.number, x.digits + y.digits, || {
+        self.try_insert(x.number * y.number, x.digits + y.digits, || {
             Expression::from_multiply(x.expression.clone(), y.expression.clone())
         })
     }
@@ -114,7 +114,7 @@ impl<T: Number> BinaryOperation<T> for Solver<T> {
         {
             return false;
         }
-        self.check(
+        self.try_insert(
             T::from_int(factorial_divide(x_int, y_int)),
             x.digits + y.digits,
             || {
@@ -160,7 +160,7 @@ impl BinaryOperation<i64> for Solver<i64> {
 
     fn multiply(&mut self, x: &State<i64>, y: &State<i64>) -> bool {
         if let Some(z) = x.number.checked_mul(y.number) {
-            self.check(z, x.digits + y.digits, || {
+            self.try_insert(z, x.digits + y.digits, || {
                 Expression::from_multiply(x.expression.clone(), y.expression.clone())
             })
         } else {
@@ -171,7 +171,7 @@ impl BinaryOperation<i64> for Solver<i64> {
     fn divide(&mut self, x: &State<i64>, y: &State<i64>) -> bool {
         if x.number == y.number {
             return if x.number == self.n {
-                self.check(1, 2, || {
+                self.try_insert(1, 2, || {
                     Expression::from_divide(x.expression.clone(), x.expression.clone())
                 })
             } else {
@@ -179,7 +179,7 @@ impl BinaryOperation<i64> for Solver<i64> {
             };
         }
         if x.number % y.number == 0 {
-            self.check(x.number / y.number, x.digits + y.digits, || {
+            self.try_insert(x.number / y.number, x.digits + y.digits, || {
                 Expression::from_divide(x.expression.clone(), y.expression.clone())
             })
         } else {
@@ -205,7 +205,7 @@ impl BinaryOperation<i64> for Solver<i64> {
                 return false;
             }
         }
-        self.check(x.number.pow(exponent), x.digits + y.digits, || {
+        self.try_insert(x.number.pow(exponent), x.digits + y.digits, || {
             Expression::from_sqrt(
                 Expression::from_power(x.expression.clone(), y.expression.clone()),
                 sqrt_order,
@@ -246,7 +246,7 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
     fn divide(&mut self, x: &State<Rational64>, y: &State<Rational64>) -> bool {
         if x.number == y.number {
             return if x.number.to_int() == Some(self.n) {
-                self.check(Rational64::one(), 2, || {
+                self.try_insert(Rational64::one(), 2, || {
                     Expression::from_divide(x.expression.clone(), x.expression.clone())
                 })
             } else {
@@ -256,14 +256,14 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         let mut found = false;
         let result = x.number / y.number;
         if y.expression.get_divide().is_none() {
-            if self.check(result, x.digits + y.digits, || {
+            if self.try_insert(result, x.digits + y.digits, || {
                 Expression::from_divide(x.expression.clone(), y.expression.clone())
             }) {
                 found = true;
             }
         }
         if x.expression.get_divide().is_none() {
-            if self.check(result.inv(), x.digits + y.digits, || {
+            if self.try_insert(result.inv(), x.digits + y.digits, || {
                 Expression::from_divide(y.expression.clone(), x.expression.clone())
             }) {
                 found = true;
@@ -289,7 +289,7 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         }
         let mut found = false;
         let z = x.number.pow(exponent);
-        if self.check(z, x.digits + y.digits, || {
+        if self.try_insert(z, x.digits + y.digits, || {
             Expression::from_sqrt(
                 Expression::from_power(x.expression.clone(), y.expression.clone()),
                 sqrt_order,
@@ -298,7 +298,7 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
             found = true;
         }
         if x.expression.get_divide().is_none() {
-            if self.check(z.inv(), x.digits + y.digits, || {
+            if self.try_insert(z.inv(), x.digits + y.digits, || {
                 Expression::from_sqrt(
                     Expression::from_power(
                         x.expression.clone(),
@@ -341,12 +341,12 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         let x_expression = Expression::from_factorial(x.expression.clone());
         let y_expression = Expression::from_factorial(y.expression.clone());
         let result = Rational64::from_integer(factorial_divide(x_int, y_int));
-        if self.check(result, x.digits + y.digits, || {
+        if self.try_insert(result, x.digits + y.digits, || {
             Expression::from_divide(x_expression.clone(), y_expression.clone())
         }) {
             found = true;
         }
-        if self.check(result.inv(), x.digits + y.digits, || {
+        if self.try_insert(result.inv(), x.digits + y.digits, || {
             Expression::from_divide(y_expression, x_expression)
         }) {
             found = true;
@@ -403,7 +403,7 @@ impl BinaryOperation<IntegralQuadratic> for Solver<IntegralQuadratic> {
     fn divide(&mut self, x: &State<IntegralQuadratic>, y: &State<IntegralQuadratic>) -> bool {
         if x.number == y.number {
             return if x.number.to_int() == Some(self.n) {
-                self.check(IntegralQuadratic::from_int(1), 2, || {
+                self.try_insert(IntegralQuadratic::from_int(1), 2, || {
                     Expression::from_divide(x.expression.clone(), x.expression.clone())
                 })
             } else {
@@ -411,7 +411,7 @@ impl BinaryOperation<IntegralQuadratic> for Solver<IntegralQuadratic> {
             };
         }
         if x.number.is_divisible_by(&y.number) {
-            self.check(x.number / y.number, x.digits + y.digits, || {
+            self.try_insert(x.number / y.number, x.digits + y.digits, || {
                 Expression::from_divide(x.expression.clone(), y.expression.clone())
             })
         } else {
@@ -438,7 +438,7 @@ impl BinaryOperation<IntegralQuadratic> for Solver<IntegralQuadratic> {
                 return false;
             }
         }
-        self.check(x.number.pow(exponent), x.digits + y.digits, || {
+        self.try_insert(x.number.pow(exponent), x.digits + y.digits, || {
             Expression::from_sqrt(
                 Expression::from_power(x.expression.clone(), y.expression.clone()),
                 sqrt_order,
@@ -493,7 +493,7 @@ impl BinaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
     fn divide(&mut self, x: &State<RationalQuadratic>, y: &State<RationalQuadratic>) -> bool {
         if x.number == y.number {
             return if x.number.to_int() == Some(self.n) {
-                self.check(RationalQuadratic::from_int(1), 2, || {
+                self.try_insert(RationalQuadratic::from_int(1), 2, || {
                     Expression::from_divide(x.expression.clone(), x.expression.clone())
                 })
             } else {
@@ -503,14 +503,14 @@ impl BinaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
         let mut found = false;
         let result = x.number / y.number;
         if y.expression.get_divide().is_none() {
-            if self.check(result, x.digits + y.digits, || {
+            if self.try_insert(result, x.digits + y.digits, || {
                 Expression::from_divide(x.expression.clone(), y.expression.clone())
             }) {
                 found = true;
             }
         }
         if x.expression.get_divide().is_none() {
-            if self.check(result.inv(), x.digits + y.digits, || {
+            if self.try_insert(result.inv(), x.digits + y.digits, || {
                 Expression::from_divide(y.expression.clone(), x.expression.clone())
             }) {
                 found = true;
@@ -539,7 +539,7 @@ impl BinaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
             }
         }
         let result = x.number.pow(exponent);
-        if self.check(result, x.digits + y.digits, || {
+        if self.try_insert(result, x.digits + y.digits, || {
             Expression::from_sqrt(
                 Expression::from_power(x.expression.clone(), y.expression.clone()),
                 sqrt_order,
@@ -547,7 +547,7 @@ impl BinaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
         }) {
             true
         } else if x.expression.get_divide().is_none() {
-            self.check(result.inv(), x.digits + y.digits, || {
+            self.try_insert(result.inv(), x.digits + y.digits, || {
                 Expression::from_sqrt(
                     Expression::from_power(
                         x.expression.clone(),
@@ -593,12 +593,12 @@ impl BinaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
         let x_expression = Expression::from_factorial(x.expression.clone());
         let y_expression = Expression::from_factorial(y.expression.clone());
         let result = RationalQuadratic::from_int(factorial_divide(x_int, y_int));
-        if self.check(result, x.digits + y.digits, || {
+        if self.try_insert(result, x.digits + y.digits, || {
             Expression::from_divide(x_expression.clone(), y_expression.clone())
         }) {
             found = true;
         }
-        if self.check(result.inv(), x.digits + y.digits, || {
+        if self.try_insert(result.inv(), x.digits + y.digits, || {
             Expression::from_divide(y_expression, x_expression)
         }) {
             found = true;
