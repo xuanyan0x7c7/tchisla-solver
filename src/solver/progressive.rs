@@ -6,47 +6,51 @@ use std::rc::Rc;
 impl ProgressiveSolver {
     pub fn new(
         n: i64,
+        target: i64,
+        max_depth: Option<usize>,
         integral_limits: Limits,
         rational_limits: Limits,
         quadratic_limits: Limits,
     ) -> Self {
-        let integral_solver = Solver::<i64>::new_progressive(n, integral_limits);
-        let rational_solver = Solver::<Rational64>::new_progressive(n, rational_limits);
-        let rational_quadratic_solver =
-            Solver::<RationalQuadratic>::new_progressive(n, quadratic_limits);
         Self {
-            target: 0,
-            integral_solver,
-            rational_solver,
-            rational_quadratic_solver,
+            target,
+            max_depth,
+            integral_solver: Solver::<i64>::new_progressive(n, integral_limits),
+            integral_phase2_solver: Solver::<i64>::new(n, integral_limits),
+            rational_solver: Solver::<Rational64>::new_progressive(n, rational_limits),
+            rational_quadratic_solver: Solver::<RationalQuadratic>::new_progressive(
+                n,
+                quadratic_limits,
+            ),
             depth_searched: 0,
             search_state: ProgressiveSearchState::None,
+            verbose: false,
         }
     }
 
-    pub fn solve(
-        &mut self,
-        target: i64,
-        max_depth: Option<usize>,
-    ) -> Option<(Rc<Expression>, usize)> {
-        self.target = target;
+    pub fn set_verbose(&mut self, verbose: bool) {
+        self.verbose = verbose;
+    }
+
+    pub fn solve(&mut self) -> Option<(Rc<Expression>, usize)> {
         if let Some((expression, digits)) = self.get_solution(&self.target) {
-            return if max_depth.unwrap_or(usize::MAX) >= *digits {
-                Some((expression.clone(), *digits))
-            } else {
-                None
-            };
+            if self.max_depth.unwrap_or(usize::MAX) >= *digits {
+                return Some((expression.clone(), *digits));
+            }
         }
-        for digits in self.depth_searched + 1..=max_depth.unwrap_or(usize::MAX) {
+        for digits in self.depth_searched + 1..=self.max_depth.unwrap_or(usize::MAX) {
             if self.search(digits) {
-                return Some(self.get_solution(&self.target).unwrap().clone());
+                let solution = self.get_solution(&self.target)?.clone();
+                self.max_depth = Some(solution.1 - 1);
+                return Some(solution);
             }
         }
         None
     }
 
     pub fn get_solution(&self, x: &i64) -> Option<&(Rc<Expression>, usize)> {
-        self.integral_solver
+        let solution = self
+            .integral_solver
             .get_solution(x)
             .or_else(|| {
                 self.rational_solver
@@ -55,7 +59,17 @@ impl ProgressiveSolver {
             .or_else(|| {
                 self.rational_quadratic_solver
                     .get_solution(&RationalQuadratic::from_int(*x))
-            })
+            });
+        let phase2_solution = self.integral_phase2_solver.get_solution(x);
+        if solution.is_some() {
+            if phase2_solution.is_some() && solution.unwrap().1 > phase2_solution.unwrap().1 {
+                phase2_solution
+            } else {
+                solution
+            }
+        } else {
+            phase2_solution
+        }
     }
 
     fn search(&mut self, digits: usize) -> bool {
@@ -87,7 +101,28 @@ impl ProgressiveSolver {
                 self.integral_solver.clear_new_numbers();
                 self.rational_solver.clear_new_numbers();
                 self.rational_quadratic_solver.clear_new_numbers();
+                self.search_state = ProgressiveSearchState::IntegralPhase2;
+            }
+            _ => {}
+        }
+        match self.search_state {
+            ProgressiveSearchState::IntegralPhase2 => {
+                let mut found = false;
+                if digits >= 3 && digits < self.max_depth.unwrap_or(usize::MAX) {
+                    self.integral_phase2_solver
+                        .clone_non_pregressive_from(&self.integral_solver);
+                    if self
+                        .integral_phase2_solver
+                        .solve(self.target, self.max_depth)
+                        .is_some()
+                    {
+                        found = true;
+                    }
+                }
                 self.search_state = ProgressiveSearchState::Rational;
+                if found {
+                    return true;
+                }
             }
             _ => {}
         }
@@ -149,6 +184,9 @@ impl ProgressiveSolver {
         }
         self.depth_searched = digits;
         self.search_state = ProgressiveSearchState::None;
+        if self.verbose {
+            println!("depth: {}", digits);
+        }
         false
     }
 }

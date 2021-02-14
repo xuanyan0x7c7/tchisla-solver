@@ -138,6 +138,12 @@ pub fn _solve_progressive(n: i32, target: i32, config: &JsValue) -> JsValue {
     let config: ProgressiveConfig = config.into_serde().unwrap();
     let mut solver = ProgressiveSolver::new(
         n as i64,
+        target as i64,
+        if config.max_depth == 0 {
+            None
+        } else {
+            Some(config.max_depth)
+        },
         Limits {
             max_digits: config.integral_max_digits,
             max_factorial: config.integral_max_factorial as i64,
@@ -154,12 +160,13 @@ pub fn _solve_progressive(n: i32, target: i32, config: &JsValue) -> JsValue {
             max_quadratic_power: config.quadratic_max_quadratic_power,
         },
     );
-    _serialize_output(solver.solve(
-        target as i64,
-        if config.max_depth == 0 {
-            None
+    let mut solution = None;
+    loop {
+        let s = solver.solve();
+        if s.is_some() {
+            solution = s;
         } else {
-            Some(config.max_depth)
-        },
-    ))
+            return _serialize_output(solution);
+        }
+    }
 }

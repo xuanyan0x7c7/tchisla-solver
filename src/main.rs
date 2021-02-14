@@ -1,16 +1,17 @@
 use std::env;
 use tchisla_solver::*;
 
-fn parse_problem() -> Option<(i64, i64)> {
+fn parse_problem() -> Option<(i64, i64, bool)> {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 2 {
+    if args.len() < 2 {
         return None;
     }
     if let Some(index) = args[1].find('#') {
         let target = args[1][..index].parse();
         let n = args[1][(index + 1)..].parse();
         if n.is_ok() && target.is_ok() {
-            Some((n.unwrap(), target.unwrap()))
+            let verbose = args.len() > 2 && args[2] == "--verbose";
+            Some((n.unwrap(), target.unwrap(), verbose))
         } else {
             None
         }
@@ -20,22 +21,12 @@ fn parse_problem() -> Option<(i64, i64)> {
 }
 
 fn main() {
-    if let Some((n, target)) = parse_problem() {
-        let mut max_depth = None;
-        let mut integral_solver = Solver::<i64>::new(
+    if let Some((n, target, verbose)) = parse_problem() {
+        println!("{} # {}", target, n);
+        let mut solver = ProgressiveSolver::new(
             n,
-            Limits {
-                max_digits: 48,
-                max_factorial: 20,
-                max_quadratic_power: 0,
-            },
-        );
-        if let Some((expression, digits)) = integral_solver.solve(target, max_depth) {
-            println!("integral({}): {} = {}", digits, target, expression);
-            max_depth = Some(digits - 1);
-        }
-        let mut progressive_solver = ProgressiveSolver::new(
-            n,
+            target,
+            None,
             Limits {
                 max_digits: 48,
                 max_factorial: 20,
@@ -52,10 +43,13 @@ fn main() {
                 max_quadratic_power: if n == 7 { 3 } else { 2 },
             },
         );
-        if let Some((expression, digits)) = progressive_solver.solve(target, max_depth) {
-            println!("progressive({}): {} = {}", digits, target, expression);
+        solver.set_verbose(verbose);
+        let mut solution_found = false;
+        while let Some((expression, digits)) = solver.solve() {
+            solution_found = true;
+            println!("{}: {}", digits, expression);
         }
-        if max_depth.is_none() {
+        if !solution_found {
             println!("No solution!");
         }
     }

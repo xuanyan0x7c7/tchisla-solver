@@ -34,6 +34,12 @@ impl<T: Number> Solver<T> {
         }
     }
 
+    #[inline]
+    pub(super) fn clone_non_pregressive_from(&mut self, source: &Self) {
+        self.clone_from(source);
+        self.progressive = false;
+    }
+
     pub fn solve(
         &mut self,
         target: T,

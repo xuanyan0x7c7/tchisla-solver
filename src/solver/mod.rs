@@ -10,6 +10,7 @@ mod searcher;
 mod solver;
 mod unary_operation;
 
+#[derive(Clone, Copy)]
 pub struct Limits {
     pub max_digits: usize,
     pub max_factorial: i64,
@@ -22,6 +23,7 @@ struct State<T: Number> {
     expression: Rc<Expression>,
 }
 
+#[derive(Clone, Copy)]
 enum SearchState {
     None,
     Concat,
@@ -32,6 +34,7 @@ enum SearchState {
     Finish,
 }
 
+#[derive(Clone)]
 pub struct Solver<T: Number> {
     n: i64,
     target: T,
@@ -81,6 +84,7 @@ trait Searcher<T: Number> {
 enum ProgressiveSearchState {
     None,
     Integral,
+    IntegralPhase2,
     Rational,
     RationalQuadratic,
     Finished,
@@ -88,9 +92,12 @@ enum ProgressiveSearchState {
 
 pub struct ProgressiveSolver {
     target: i64,
+    max_depth: Option<usize>,
     integral_solver: Solver<i64>,
+    integral_phase2_solver: Solver<i64>,
     rational_solver: Solver<Rational64>,
     rational_quadratic_solver: Solver<RationalQuadratic>,
     depth_searched: usize,
     search_state: ProgressiveSearchState,
+    verbose: bool,
 }
