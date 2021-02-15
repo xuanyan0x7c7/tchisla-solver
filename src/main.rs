@@ -45,7 +45,7 @@ fn main() {
         );
         solver.set_verbose(verbose);
         let mut solution_found = false;
-        while let Some((expression, digits)) = solver.solve() {
+        for (expression, digits) in solver.solve() {
             solution_found = true;
             println!("{}: {}", digits, expression);
         }

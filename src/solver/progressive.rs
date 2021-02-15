@@ -32,20 +32,8 @@ impl ProgressiveSolver {
         self.verbose = verbose;
     }
 
-    pub fn solve(&mut self) -> Option<(Rc<Expression>, usize)> {
-        if let Some((expression, digits)) = self.get_solution(&self.target) {
-            if self.max_depth.unwrap_or(usize::MAX) >= *digits {
-                return Some((expression.clone(), *digits));
-            }
-        }
-        for digits in self.depth_searched + 1..=self.max_depth.unwrap_or(usize::MAX) {
-            if self.search(digits) {
-                let solution = self.get_solution(&self.target)?.clone();
-                self.max_depth = Some(solution.1 - 1);
-                return Some(solution);
-            }
-        }
-        None
+    pub fn solve(&mut self) -> SolverIterator {
+        SolverIterator { solver: self }
     }
 
     pub fn get_solution(&self, x: &i64) -> Option<&(Rc<Expression>, usize)> {
@@ -70,6 +58,22 @@ impl ProgressiveSolver {
         } else {
             phase2_solution
         }
+    }
+
+    fn solve_next(&mut self) -> Option<(Rc<Expression>, usize)> {
+        if let Some((expression, digits)) = self.get_solution(&self.target) {
+            if self.max_depth.unwrap_or(usize::MAX) >= *digits {
+                return Some((expression.clone(), *digits));
+            }
+        }
+        for digits in self.depth_searched + 1..=self.max_depth.unwrap_or(usize::MAX) {
+            if self.search(digits) {
+                let solution = self.get_solution(&self.target)?.clone();
+                self.max_depth = Some(solution.1 - 1);
+                return Some(solution);
+            }
+        }
+        None
     }
 
     fn search(&mut self, digits: usize) -> bool {
@@ -188,5 +192,17 @@ impl ProgressiveSolver {
             println!("depth: {}", digits);
         }
         false
+    }
+}
+
+pub struct SolverIterator<'a> {
+    solver: &'a mut ProgressiveSolver,
+}
+
+impl<'a> Iterator for SolverIterator<'a> {
+    type Item = (Rc<Expression>, usize);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.solver.solve_next()
     }
 }

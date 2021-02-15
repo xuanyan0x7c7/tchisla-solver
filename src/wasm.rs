@@ -161,12 +161,8 @@ pub fn _solve_progressive(n: i32, target: i32, config: &JsValue) -> JsValue {
         },
     );
     let mut solution = None;
-    loop {
-        let s = solver.solve();
-        if s.is_some() {
-            solution = s;
-        } else {
-            return _serialize_output(solution);
-        }
+    for s in solver.solve() {
+        solution = Some(s);
     }
+    _serialize_output(solution)
 }
