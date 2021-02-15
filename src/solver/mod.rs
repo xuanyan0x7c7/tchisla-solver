@@ -1,10 +1,8 @@
-use crate::{Expression, Number, RationalQuadratic};
-use num::rational::Rational64;
+use crate::{Expression, Number};
 use std::collections::HashMap;
 use std::rc::Rc;
 
 mod binary_operation;
-mod progressive;
 mod range_check;
 mod searcher;
 mod solver;
@@ -79,25 +77,4 @@ trait BinaryOperation<T: Number> {
 trait Searcher<T: Number> {
     fn search(&mut self, digits: usize) -> bool;
     fn sort_states(&mut self, digits: usize);
-}
-
-enum ProgressiveSearchState {
-    None,
-    Integral,
-    IntegralPhase2,
-    Rational,
-    RationalQuadratic,
-    Finished,
-}
-
-pub struct ProgressiveSolver {
-    target: i64,
-    max_depth: Option<usize>,
-    integral_solver: Solver<i64>,
-    integral_phase2_solver: Solver<i64>,
-    rational_solver: Solver<Rational64>,
-    rational_quadratic_solver: Solver<RationalQuadratic>,
-    depth_searched: usize,
-    search_state: ProgressiveSearchState,
-    verbose: bool,
 }

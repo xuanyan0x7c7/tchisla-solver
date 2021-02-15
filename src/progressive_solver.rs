@@ -1,7 +1,28 @@
-use super::{Limits, ProgressiveSearchState, ProgressiveSolver, Solver};
+use super::{Limits, Solver};
 use crate::{Expression, Number, RationalQuadratic};
 use num::rational::Rational64;
 use std::rc::Rc;
+
+enum ProgressiveSearchState {
+    None,
+    Integral,
+    FullIntegral,
+    Rational,
+    RationalQuadratic,
+    Finished,
+}
+
+pub struct ProgressiveSolver {
+    target: i64,
+    max_depth: Option<usize>,
+    integral_solver: Solver<i64>,
+    full_integral_solver: Solver<i64>,
+    rational_solver: Solver<Rational64>,
+    rational_quadratic_solver: Solver<RationalQuadratic>,
+    depth_searched: usize,
+    search_state: ProgressiveSearchState,
+    verbose: bool,
+}
 
 impl ProgressiveSolver {
     pub fn new(
@@ -16,7 +37,7 @@ impl ProgressiveSolver {
             target,
             max_depth,
             integral_solver: Solver::<i64>::new_progressive(n, integral_limits),
-            integral_phase2_solver: Solver::<i64>::new(n, integral_limits),
+            full_integral_solver: Solver::<i64>::new(n, integral_limits),
             rational_solver: Solver::<Rational64>::new_progressive(n, rational_limits),
             rational_quadratic_solver: Solver::<RationalQuadratic>::new_progressive(
                 n,
@@ -48,7 +69,7 @@ impl ProgressiveSolver {
                 self.rational_quadratic_solver
                     .get_solution(&RationalQuadratic::from_int(*x))
             });
-        let phase2_solution = self.integral_phase2_solver.get_solution(x);
+        let phase2_solution = self.full_integral_solver.get_solution(x);
         if solution.is_some() {
             if phase2_solution.is_some() && solution.unwrap().1 > phase2_solution.unwrap().1 {
                 phase2_solution
@@ -105,18 +126,18 @@ impl ProgressiveSolver {
                 self.integral_solver.clear_new_numbers();
                 self.rational_solver.clear_new_numbers();
                 self.rational_quadratic_solver.clear_new_numbers();
-                self.search_state = ProgressiveSearchState::IntegralPhase2;
+                self.search_state = ProgressiveSearchState::FullIntegral;
             }
             _ => {}
         }
         match self.search_state {
-            ProgressiveSearchState::IntegralPhase2 => {
+            ProgressiveSearchState::FullIntegral => {
                 let mut found = false;
                 if digits >= 3 && digits < self.max_depth.unwrap_or(usize::MAX) {
-                    self.integral_phase2_solver
+                    self.full_integral_solver
                         .clone_non_pregressive_from(&self.integral_solver);
                     if self
-                        .integral_phase2_solver
+                        .full_integral_solver
                         .solve(self.target, self.max_depth)
                         .is_some()
                     {

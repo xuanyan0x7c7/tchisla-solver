@@ -35,7 +35,7 @@ impl<T: Number> Solver<T> {
     }
 
     #[inline]
-    pub(super) fn clone_non_pregressive_from(&mut self, source: &Self) {
+    pub(crate) fn clone_non_pregressive_from(&mut self, source: &Self) {
         self.clone_from(source);
         self.progressive = false;
     }
@@ -102,12 +102,12 @@ impl<T: Number> Solver<T> {
     }
 
     #[inline]
-    pub fn new_numbers(&self) -> &Vec<T> {
+    pub(crate) fn new_numbers(&self) -> &Vec<T> {
         &self.new_numbers
     }
 
     #[inline]
-    pub fn clear_new_numbers(&mut self) {
+    pub(crate) fn clear_new_numbers(&mut self) {
         self.new_numbers.clear();
     }
 
