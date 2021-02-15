@@ -1,4 +1,4 @@
-use super::{BinaryOperation, Solver, State};
+use super::{Solver, State};
 use crate::number_theory::factorial_divide;
 use crate::quadratic::PRIMES;
 use crate::{Expression, IntegralQuadratic, Number, RationalQuadratic};
@@ -48,6 +48,16 @@ impl Digits for RationalQuadratic {
         }
         result
     }
+}
+
+pub(super) trait BinaryOperation<T: Number> {
+    fn binary_operation(&mut self, x: State<T>, y: State<T>) -> bool;
+    fn add(&mut self, x: &State<T>, y: &State<T>) -> bool;
+    fn subtract(&mut self, x: &State<T>, y: &State<T>) -> bool;
+    fn multiply(&mut self, x: &State<T>, y: &State<T>) -> bool;
+    fn divide(&mut self, x: &State<T>, y: &State<T>) -> bool;
+    fn power(&mut self, x: &State<T>, y: &State<T>) -> bool;
+    fn factorial_divide(&mut self, x: &State<T>, y: &State<T>) -> bool;
 }
 
 impl<T: Number> BinaryOperation<T> for Solver<T> {

@@ -1,5 +1,10 @@
-use super::{BinaryOperation, SearchState, Searcher, Solver, State, UnaryOperation};
+use super::{BinaryOperation, SearchState, Solver, State, UnaryOperation};
 use crate::Number;
+
+pub(super) trait Searcher<T: Number> {
+    fn search(&mut self, digits: usize) -> bool;
+    fn sort_states(&mut self, digits: usize);
+}
 
 impl<T: Number> Searcher<T> for Solver<T> {
     fn search(&mut self, digits: usize) -> bool {

@@ -160,9 +160,5 @@ pub fn _solve_progressive(n: i32, target: i32, config: &JsValue) -> JsValue {
             max_quadratic_power: config.quadratic_max_quadratic_power,
         },
     );
-    let mut solution = None;
-    for s in solver.solve() {
-        solution = Some(s);
-    }
-    _serialize_output(solution)
+    _serialize_output(solver.solve().last())
 }

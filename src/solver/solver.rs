@@ -2,12 +2,13 @@ use super::{Limits, RangeCheck, SearchState, Searcher, Solver, State, UnaryOpera
 use crate::{Expression, Number};
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::slice::Iter;
 
 impl<T: Number> Solver<T> {
     pub fn new(n: i64, limits: Limits) -> Self {
         Self {
             n,
-            target: T::from_int(0),
+            target: T::zero(),
             states: HashMap::new(),
             states_by_depth: vec![],
             extra_states_by_depth: vec![],
@@ -22,7 +23,7 @@ impl<T: Number> Solver<T> {
     pub fn new_progressive(n: i64, limits: Limits) -> Self {
         Self {
             n,
-            target: T::from_int(0),
+            target: T::zero(),
             states: HashMap::new(),
             states_by_depth: vec![],
             extra_states_by_depth: vec![],
@@ -55,7 +56,7 @@ impl<T: Number> Solver<T> {
         }
         for digits in self.depth_searched + 1..=max_depth.unwrap_or(usize::MAX) {
             if self.search(digits) {
-                return Some(self.states.get(&self.target).unwrap().clone());
+                return Some(self.states.get(&self.target)?.clone());
             }
         }
         None
@@ -72,7 +73,7 @@ impl<T: Number> Solver<T> {
         digits: usize,
         expression_fn: impl FnOnce() -> Rc<Expression>,
     ) -> bool {
-        if !self.range_check(x) || self.get_solution(&x).is_some() {
+        if !self.range_check(&x) || self.get_solution(&x).is_some() {
             return false;
         }
         let expression = expression_fn();
@@ -102,8 +103,11 @@ impl<T: Number> Solver<T> {
     }
 
     #[inline]
-    pub(crate) fn new_numbers(&self) -> &Vec<T> {
-        &self.new_numbers
+    pub(crate) fn new_numbers(&self) -> NewNumberIterator<T> {
+        NewNumberIterator {
+            solver: self,
+            iter: self.new_numbers.iter(),
+        }
     }
 
     #[inline]
@@ -121,5 +125,20 @@ impl<T: Number> Solver<T> {
             self.new_numbers.push(x);
         }
         x == self.target
+    }
+}
+
+pub(crate) struct NewNumberIterator<'a, T: Number> {
+    solver: &'a Solver<T>,
+    iter: Iter<'a, T>,
+}
+
+impl<'a, T: Number> Iterator for NewNumberIterator<'a, T> {
+    type Item = (&'a T, &'a Rc<Expression>, usize);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let x = self.iter.next()?;
+        let (expression, digits) = self.solver.get_solution(x)?;
+        Some((x, expression, *digits))
     }
 }

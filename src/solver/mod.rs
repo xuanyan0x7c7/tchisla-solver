@@ -8,6 +8,11 @@ mod searcher;
 mod solver;
 mod unary_operation;
 
+use binary_operation::BinaryOperation;
+use range_check::RangeCheck;
+use searcher::Searcher;
+use unary_operation::UnaryOperation;
+
 #[derive(Clone, Copy)]
 pub struct Limits {
     pub max_digits: usize,
@@ -21,7 +26,7 @@ struct State<T: Number> {
     expression: Rc<Expression>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 enum SearchState {
     None,
     Concat,
@@ -44,37 +49,4 @@ pub struct Solver<T: Number> {
     limits: Limits,
     progressive: bool,
     new_numbers: Vec<T>,
-}
-
-trait RangeCheck<T: Number> {
-    fn range_check(&self, _x: T) -> bool;
-}
-
-trait UnaryOperation<T: Number> {
-    fn unary_operation(&mut self, x: State<T>) -> bool;
-    fn concat(&mut self, digits: usize) -> bool;
-    fn sqrt(&mut self, x: &State<T>) -> bool;
-    fn factorial(&mut self, x: &State<T>) -> bool;
-    fn division_diff_one(
-        &mut self,
-        x: T,
-        digits: usize,
-        numerator: Rc<Expression>,
-        denominator: Rc<Expression>,
-    ) -> bool;
-}
-
-trait BinaryOperation<T: Number> {
-    fn binary_operation(&mut self, x: State<T>, y: State<T>) -> bool;
-    fn add(&mut self, x: &State<T>, y: &State<T>) -> bool;
-    fn subtract(&mut self, x: &State<T>, y: &State<T>) -> bool;
-    fn multiply(&mut self, x: &State<T>, y: &State<T>) -> bool;
-    fn divide(&mut self, x: &State<T>, y: &State<T>) -> bool;
-    fn power(&mut self, x: &State<T>, y: &State<T>) -> bool;
-    fn factorial_divide(&mut self, x: &State<T>, y: &State<T>) -> bool;
-}
-
-trait Searcher<T: Number> {
-    fn search(&mut self, digits: usize) -> bool;
-    fn sort_states(&mut self, digits: usize);
 }

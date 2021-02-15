@@ -1,4 +1,4 @@
-use super::{Solver, State, UnaryOperation};
+use super::{Solver, State};
 use crate::number_theory::{factorial, try_sqrt};
 use crate::{Expression, IntegralQuadratic, Number, RationalQuadratic};
 use num::rational::Rational64;
@@ -13,6 +13,20 @@ fn is_single_digit(expression: &Expression) -> bool {
         Expression::Factorial(x) => is_single_digit(x),
         _ => false,
     }
+}
+
+pub(super) trait UnaryOperation<T: Number> {
+    fn unary_operation(&mut self, x: State<T>) -> bool;
+    fn concat(&mut self, digits: usize) -> bool;
+    fn sqrt(&mut self, x: &State<T>) -> bool;
+    fn factorial(&mut self, x: &State<T>) -> bool;
+    fn division_diff_one(
+        &mut self,
+        x: T,
+        digits: usize,
+        numerator: Rc<Expression>,
+        denominator: Rc<Expression>,
+    ) -> bool;
 }
 
 impl<T: Number> UnaryOperation<T> for Solver<T> {
