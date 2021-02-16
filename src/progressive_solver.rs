@@ -71,7 +71,7 @@ impl ProgressiveSolver {
             .or_else(|| self.full_integral_solver.get_solution(x))
     }
 
-    fn solve_next(&mut self) -> Option<(Rc<Expression>, usize)> {
+    pub(crate) fn solve_next(&mut self) -> Option<(Rc<Expression>, usize)> {
         for digits in self.depth_searched + 1..=self.max_depth.unwrap_or(usize::MAX) {
             if self.search(digits) {
                 let solution = self.get_solution(&self.target)?.clone();
