@@ -82,7 +82,7 @@ pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
         },
     );
     _serialize_output(solver.solve(
-        Rational64::from_integer(target as i64),
+        (target as i64).into(),
         if config.max_depth == 0 {
             None
         } else {
@@ -103,7 +103,7 @@ pub fn _solve_integral_quadratic(n: i32, target: i32, config: &JsValue) -> JsVal
         },
     );
     _serialize_output(solver.solve(
-        IntegralQuadratic::from_int(target as i64),
+        (target as i64).into(),
         if config.max_depth == 0 {
             None
         } else {
@@ -124,7 +124,7 @@ pub fn _solve_ratinoal_quadratic(n: i32, target: i32, config: &JsValue) -> JsVal
         },
     );
     _serialize_output(solver.solve(
-        RationalQuadratic::from_int(target as i64),
+        (target as i64).into(),
         if config.max_depth == 0 {
             None
         } else {

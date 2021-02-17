@@ -4,19 +4,13 @@ use std::fmt::Display;
 use std::hash::Hash;
 use std::ops::Neg;
 
-pub trait Number: Copy + Display + Eq + Hash + Num + Signed + Neg {
-    fn from_int(x: i64) -> Self;
+pub trait Number: Copy + Display + Eq + Hash + Num + Signed + Neg + From<i64> {
     fn to_int(self) -> Option<i64>;
     fn is_int(self) -> bool;
     fn is_rational(self) -> bool;
 }
 
 impl Number for i64 {
-    #[inline]
-    fn from_int(x: i64) -> Self {
-        x
-    }
-
     #[inline]
     fn to_int(self) -> Option<i64> {
         Some(self)
@@ -34,11 +28,6 @@ impl Number for i64 {
 }
 
 impl Number for Rational64 {
-    #[inline]
-    fn from_int(x: i64) -> Self {
-        Rational64::from_integer(x)
-    }
-
     #[inline]
     fn to_int(self) -> Option<i64> {
         if self.is_integer() {

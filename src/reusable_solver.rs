@@ -64,14 +64,8 @@ impl ReusableSolver {
     pub fn get_solution(&self, x: &i64) -> Option<&(Rc<Expression>, usize)> {
         self.integral_solver
             .get_solution(x)
-            .or_else(|| {
-                self.rational_solver
-                    .get_solution(&Rational64::from_integer(*x))
-            })
-            .or_else(|| {
-                self.rational_quadratic_solver
-                    .get_solution(&RationalQuadratic::from_int(*x))
-            })
+            .or_else(|| self.rational_solver.get_solution(&(*x).into()))
+            .or_else(|| self.rational_quadratic_solver.get_solution(&(*x).into()))
     }
 
     fn search(&mut self, digits: usize) -> bool {
@@ -92,12 +86,9 @@ impl ReusableSolver {
                 }
                 for (x, expression, _) in self.integral_solver.new_numbers() {
                     self.rational_solver
-                        .try_insert(Rational64::from_integer(*x), digits, || expression.clone());
-                    self.rational_quadratic_solver.try_insert(
-                        RationalQuadratic::from_int(*x),
-                        digits,
-                        || expression.clone(),
-                    );
+                        .try_insert((*x).into(), digits, || expression.clone());
+                    self.rational_quadratic_solver
+                        .try_insert((*x).into(), digits, || expression.clone());
                 }
                 self.clear_new_numbers();
                 self.search_state = ReusableSearchState::Rational;
@@ -108,7 +99,7 @@ impl ReusableSolver {
             ReusableSearchState::Rational => {
                 if self
                     .rational_solver
-                    .solve(Rational64::from_integer(self.target), Some(digits))
+                    .solve(self.target.into(), Some(digits))
                     .is_some()
                 {
                     return true;
@@ -118,11 +109,8 @@ impl ReusableSolver {
                         self.integral_solver
                             .try_insert(x_int, digits, || expression.clone());
                     }
-                    self.rational_quadratic_solver.try_insert(
-                        RationalQuadratic::from_rational(*x),
-                        digits,
-                        || expression.clone(),
-                    );
+                    self.rational_quadratic_solver
+                        .try_insert((*x).into(), digits, || expression.clone());
                 }
                 self.clear_new_numbers();
                 self.search_state = ReusableSearchState::RationalQuadratic;
@@ -133,7 +121,7 @@ impl ReusableSolver {
             ReusableSearchState::RationalQuadratic => {
                 if self
                     .rational_quadratic_solver
-                    .solve(RationalQuadratic::from_int(self.target), Some(digits))
+                    .solve(self.target.into(), Some(digits))
                     .is_some()
                 {
                     return true;

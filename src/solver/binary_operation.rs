@@ -125,7 +125,7 @@ impl<T: Number> BinaryOperation<T> for Solver<T> {
             return false;
         }
         self.try_insert(
-            T::from_int(factorial_divide(x_int, y_int)),
+            factorial_divide(x_int, y_int).into(),
             x.digits + y.digits,
             || {
                 Expression::from_divide(
@@ -350,7 +350,7 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         let mut found = false;
         let x_expression = Expression::from_factorial(x.expression.clone());
         let y_expression = Expression::from_factorial(y.expression.clone());
-        let result = Rational64::from_integer(factorial_divide(x_int, y_int));
+        let result = factorial_divide(x_int, y_int).into();
         if self.try_insert(result, x.digits + y.digits, || {
             Expression::from_divide(x_expression.clone(), y_expression.clone())
         }) {
@@ -413,7 +413,7 @@ impl BinaryOperation<IntegralQuadratic> for Solver<IntegralQuadratic> {
     fn divide(&mut self, x: &State<IntegralQuadratic>, y: &State<IntegralQuadratic>) -> bool {
         if x.number == y.number {
             return if x.number.to_int() == Some(self.n) {
-                self.try_insert(IntegralQuadratic::from_int(1), 2, || {
+                self.try_insert(IntegralQuadratic::one(), 2, || {
                     Expression::from_divide(x.expression.clone(), x.expression.clone())
                 })
             } else {
@@ -503,7 +503,7 @@ impl BinaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
     fn divide(&mut self, x: &State<RationalQuadratic>, y: &State<RationalQuadratic>) -> bool {
         if x.number == y.number {
             return if x.number.to_int() == Some(self.n) {
-                self.try_insert(RationalQuadratic::from_int(1), 2, || {
+                self.try_insert(RationalQuadratic::one(), 2, || {
                     Expression::from_divide(x.expression.clone(), x.expression.clone())
                 })
             } else {
@@ -602,7 +602,7 @@ impl BinaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
         let mut found = false;
         let x_expression = Expression::from_factorial(x.expression.clone());
         let y_expression = Expression::from_factorial(y.expression.clone());
-        let result = RationalQuadratic::from_int(factorial_divide(x_int, y_int));
+        let result = factorial_divide(x_int, y_int).into();
         if self.try_insert(result, x.digits + y.digits, || {
             Expression::from_divide(x_expression.clone(), y_expression.clone())
         }) {

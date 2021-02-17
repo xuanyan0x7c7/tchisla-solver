@@ -10,15 +10,6 @@ use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
 impl RationalQuadratic {
     #[inline]
-    pub fn from_rational(x: Rational64) -> Self {
-        Self {
-            rational_part: x,
-            quadratic_part: [0; PRIMES.len()],
-            quadratic_power: 0,
-        }
-    }
-
-    #[inline]
     pub fn rational_part(&self) -> Rational64 {
         self.rational_part
     }
@@ -61,16 +52,29 @@ impl fmt::Display for RationalQuadratic {
     }
 }
 
-impl Number for RationalQuadratic {
+impl From<i64> for RationalQuadratic {
     #[inline]
-    fn from_int(x: i64) -> Self {
+    fn from(x: i64) -> Self {
         Self {
-            rational_part: Rational64::from_integer(x),
+            rational_part: x.into(),
             quadratic_part: [0; PRIMES.len()],
             quadratic_power: 0,
         }
     }
+}
 
+impl From<Rational64> for RationalQuadratic {
+    #[inline]
+    fn from(x: Rational64) -> Self {
+        Self {
+            rational_part: x,
+            quadratic_part: [0; PRIMES.len()],
+            quadratic_power: 0,
+        }
+    }
+}
+
+impl Number for RationalQuadratic {
     #[inline]
     fn to_int(self) -> Option<i64> {
         if self.quadratic_power == 0 && self.rational_part.is_integer() {
@@ -426,8 +430,8 @@ impl Pow<i32> for RationalQuadratic {
         }
         for i in 0..PRIMES.len() {
             let prime_power =
-                ((self.quadratic_part[i] as i32) * power).div_mod_floor(&(1i32 << quadratic_power));
-            rational_part *= Rational64::from_integer(PRIMES[i]).pow(prime_power.0);
+                ((self.quadratic_part[i] as i32) * power).div_mod_floor(&(1 << quadratic_power));
+            rational_part *= Rational64::from(PRIMES[i]).pow(prime_power.0);
             quadratic_part[i] = prime_power.1 as u8;
         }
         Self {

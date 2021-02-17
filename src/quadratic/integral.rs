@@ -50,16 +50,18 @@ impl fmt::Display for IntegralQuadratic {
     }
 }
 
-impl Number for IntegralQuadratic {
+impl From<i64> for IntegralQuadratic {
     #[inline]
-    fn from_int(x: i64) -> Self {
+    fn from(x: i64) -> Self {
         Self {
             integral_part: x,
             quadratic_part: [0; PRIMES.len()],
             quadratic_power: 0,
         }
     }
+}
 
+impl Number for IntegralQuadratic {
     #[inline]
     fn to_int(self) -> Option<i64> {
         if self.quadratic_power == 0 {
@@ -331,7 +333,7 @@ impl Pow<u32> for IntegralQuadratic {
         }
         for i in 0..PRIMES.len() {
             let prime_power =
-                ((self.quadratic_part[i] as u32) * power).div_mod_floor(&(1u32 << quadratic_power));
+                ((self.quadratic_part[i] as u32) * power).div_mod_floor(&(1 << quadratic_power));
             integral_part *= (PRIMES[i] as i64).pow(prime_power.0);
             quadratic_part[i] = prime_power.1 as u8;
         }

@@ -80,7 +80,7 @@ impl<T: Number> UnaryOperation<T> for Solver<T> {
             return false;
         }
         let x = (10i64.pow(digits as u32) - 1) / 9 * self.n;
-        self.try_insert(T::from_int(x), digits, || Expression::from_number(x))
+        self.try_insert(x.into(), digits, || Expression::from_number(x))
     }
 
     default fn sqrt(&mut self, _x: &State<T>) -> bool {
@@ -90,7 +90,7 @@ impl<T: Number> UnaryOperation<T> for Solver<T> {
     fn factorial(&mut self, x: &State<T>) -> bool {
         if let Some(n) = x.number.to_int() {
             if n < self.limits.max_factorial as i64 {
-                self.try_insert(T::from_int(factorial(n)), x.digits, || {
+                self.try_insert(factorial(n).into(), x.digits, || {
                     Expression::from_factorial(x.expression.clone())
                 })
             } else {
