@@ -15,7 +15,7 @@ pub enum Expression {
 
 impl Expression {
     #[inline]
-    pub fn get_number(&self) -> Option<i64> {
+    pub fn to_number(&self) -> Option<i64> {
         match self {
             Expression::Number(x) => Some(*x),
             _ => None,
@@ -23,7 +23,15 @@ impl Expression {
     }
 
     #[inline]
-    pub fn get_negate(&self) -> Option<&Rc<Expression>> {
+    pub fn is_number(&self) -> bool {
+        match self {
+            Expression::Number(_) => true,
+            _ => false,
+        }
+    }
+
+    #[inline]
+    pub fn to_negate(&self) -> Option<&Rc<Expression>> {
         match self {
             Expression::Negate(x) => Some(x),
             _ => None,
@@ -31,7 +39,15 @@ impl Expression {
     }
 
     #[inline]
-    pub fn get_add(&self) -> Option<(&Rc<Expression>, &Rc<Expression>)> {
+    pub fn is_negate(&self) -> bool {
+        match self {
+            Expression::Negate(_) => true,
+            _ => false,
+        }
+    }
+
+    #[inline]
+    pub fn to_add(&self) -> Option<(&Rc<Expression>, &Rc<Expression>)> {
         match self {
             Expression::Add(x, y) => Some((x, y)),
             _ => None,
@@ -39,7 +55,15 @@ impl Expression {
     }
 
     #[inline]
-    pub fn get_subtract(&self) -> Option<(&Rc<Expression>, &Rc<Expression>)> {
+    pub fn is_add(&self) -> bool {
+        match self {
+            Expression::Add(_, _) => true,
+            _ => false,
+        }
+    }
+
+    #[inline]
+    pub fn to_subtract(&self) -> Option<(&Rc<Expression>, &Rc<Expression>)> {
         match self {
             Expression::Subtract(x, y) => Some((x, y)),
             _ => None,
@@ -47,7 +71,15 @@ impl Expression {
     }
 
     #[inline]
-    pub fn get_multiply(&self) -> Option<(&Rc<Expression>, &Rc<Expression>)> {
+    pub fn is_subtract(&self) -> bool {
+        match self {
+            Expression::Subtract(_, _) => true,
+            _ => false,
+        }
+    }
+
+    #[inline]
+    pub fn to_multiply(&self) -> Option<(&Rc<Expression>, &Rc<Expression>)> {
         match self {
             Expression::Multiply(x, y) => Some((x, y)),
             _ => None,
@@ -55,7 +87,15 @@ impl Expression {
     }
 
     #[inline]
-    pub fn get_divide(&self) -> Option<(&Rc<Expression>, &Rc<Expression>)> {
+    pub fn is_multiply(&self) -> bool {
+        match self {
+            Expression::Multiply(_, _) => true,
+            _ => false,
+        }
+    }
+
+    #[inline]
+    pub fn to_divide(&self) -> Option<(&Rc<Expression>, &Rc<Expression>)> {
         match self {
             Expression::Divide(x, y) => Some((x, y)),
             _ => None,
@@ -63,7 +103,15 @@ impl Expression {
     }
 
     #[inline]
-    pub fn get_power(&self) -> Option<(&Rc<Expression>, &Rc<Expression>)> {
+    pub fn is_divide(&self) -> bool {
+        match self {
+            Expression::Divide(_, _) => true,
+            _ => false,
+        }
+    }
+
+    #[inline]
+    pub fn to_power(&self) -> Option<(&Rc<Expression>, &Rc<Expression>)> {
         match self {
             Expression::Power(x, y) => Some((x, y)),
             _ => None,
@@ -71,7 +119,15 @@ impl Expression {
     }
 
     #[inline]
-    pub fn get_sqrt(&self) -> Option<(&Rc<Expression>, &usize)> {
+    pub fn is_power(&self) -> bool {
+        match self {
+            Expression::Power(_, _) => true,
+            _ => false,
+        }
+    }
+
+    #[inline]
+    pub fn to_sqrt(&self) -> Option<(&Rc<Expression>, &usize)> {
         match self {
             Expression::Sqrt(x, order) => Some((x, order)),
             _ => None,
@@ -79,10 +135,26 @@ impl Expression {
     }
 
     #[inline]
-    pub fn get_factorial(&self) -> Option<&Rc<Expression>> {
+    pub fn is_sqrt(&self) -> bool {
+        match self {
+            Expression::Sqrt(_, _) => true,
+            _ => false,
+        }
+    }
+
+    #[inline]
+    pub fn to_factorial(&self) -> Option<&Rc<Expression>> {
         match self {
             Expression::Factorial(x) => Some(x),
             _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn is_factorial(&self) -> bool {
+        match self {
+            Expression::Factorial(_) => true,
+            _ => false,
         }
     }
 
@@ -128,10 +200,13 @@ impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Expression::Number(x) => write!(f, "{}", x),
-            Expression::Negate(x) => match x.get_add().or(x.get_subtract()) {
-                Some(_) => write!(f, "-({})", x),
-                None => write!(f, "-{}", x),
-            },
+            Expression::Negate(x) => {
+                if x.is_add() || x.is_subtract() {
+                    write!(f, "-({})", x)
+                } else {
+                    write!(f, "-{}", x)
+                }
+            }
             Expression::Add(x, y) => fmt_binary(f, x, y, "+", self.precedence(), true, false),
             Expression::Subtract(x, y) => fmt_binary(f, x, y, "-", self.precedence(), false, false),
             Expression::Multiply(x, y) => fmt_binary(f, x, y, "*", self.precedence(), true, false),
@@ -140,15 +215,18 @@ impl fmt::Display for Expression {
             Expression::Sqrt(x, order) => {
                 write!(f, "{}{}{}", "sqrt(".repeat(*order), x, ")".repeat(*order))
             }
-            Expression::Factorial(x) => match x.get_number() {
-                Some(_) => write!(f, "{}!", x),
-                None => write!(f, "({})!", x),
-            },
+            Expression::Factorial(x) => {
+                if x.is_number() {
+                    write!(f, "{}!", x)
+                } else {
+                    write!(f, "({})!", x)
+                }
+            }
         }
     }
 }
 
-fn add_parens(x: String) -> String {
+fn add_latex_parens(x: String) -> String {
     "\\left(".to_string() + &x + "\\right)"
 }
 
@@ -161,12 +239,12 @@ fn fmt_latex_binary(
     rtl: bool,
 ) -> String {
     let lhs = if x.precedence() < precedence || (x.precedence() == precedence && rtl && !abelian) {
-        add_parens(x.to_latex_string())
+        add_latex_parens(x.to_latex_string())
     } else {
         x.to_latex_string()
     };
     let rhs = if y.precedence() < precedence || (y.precedence() == precedence && !rtl && !abelian) {
-        add_parens(y.to_latex_string())
+        add_latex_parens(y.to_latex_string())
     } else {
         y.to_latex_string()
     };
@@ -177,10 +255,13 @@ impl Expression {
     pub fn to_latex_string(&self) -> String {
         match self {
             Expression::Number(x) => x.to_string(),
-            Expression::Negate(x) => match x.get_add().or(x.get_subtract()) {
-                Some(_) => "-".to_string() + &add_parens(x.to_latex_string()),
-                None => "-".to_string() + &x.to_latex_string(),
-            },
+            Expression::Negate(x) => {
+                if x.is_add() || x.is_subtract() {
+                    "-".to_string() + &add_latex_parens(x.to_latex_string())
+                } else {
+                    "-".to_string() + &x.to_latex_string()
+                }
+            }
             Expression::Add(x, y) => fmt_latex_binary(x, y, "+", self.precedence(), true, false),
             Expression::Subtract(x, y) => {
                 fmt_latex_binary(x, y, "-", self.precedence(), false, false)
@@ -195,10 +276,10 @@ impl Expression {
             ),
             Expression::Power(x, y) => format!(
                 "{}^{{{}}}",
-                if x.get_number().is_some() {
+                if x.is_number() {
                     x.to_latex_string()
                 } else {
-                    add_parens(x.to_latex_string())
+                    add_latex_parens(x.to_latex_string())
                 },
                 y.to_latex_string()
             ),
@@ -207,10 +288,13 @@ impl Expression {
                     + x.to_latex_string().as_str()
                     + "}".repeat(*order).as_str()
             }
-            Expression::Factorial(x) => match x.get_number() {
-                Some(_) => x.to_latex_string() + "!",
-                None => add_parens(x.to_latex_string()) + "!",
-            },
+            Expression::Factorial(x) => {
+                if x.is_number() {
+                    x.to_latex_string() + "!"
+                } else {
+                    add_latex_parens(x.to_latex_string()) + "!"
+                }
+            }
         }
     }
 
@@ -219,7 +303,7 @@ impl Expression {
     }
 
     pub fn from_negate(x: Rc<Expression>) -> Rc<Expression> {
-        if let Some((y, z)) = x.get_subtract() {
+        if let Some((y, z)) = x.to_subtract() {
             Rc::new(Expression::Subtract(z.clone(), y.clone()))
         } else {
             Rc::new(Expression::Negate(x))
@@ -227,8 +311,8 @@ impl Expression {
     }
 
     pub fn from_add(x: Rc<Expression>, y: Rc<Expression>) -> Rc<Expression> {
-        let x0 = x.get_subtract();
-        let y0 = y.get_subtract();
+        let x0 = x.to_subtract();
+        let y0 = y.to_subtract();
         if x0.is_some() && y0.is_some() {
             Rc::new(Expression::Subtract(
                 Rc::new(Expression::Add(
@@ -250,7 +334,7 @@ impl Expression {
                 Rc::new(Expression::Add(x, y0.unwrap().0.clone())),
                 y0.unwrap().1.clone(),
             ))
-        } else if let Some((y1, y2)) = y.get_add() {
+        } else if let Some((y1, y2)) = y.to_add() {
             Rc::new(Expression::Add(
                 Expression::from_add(x, y1.clone()),
                 y2.clone(),
@@ -261,9 +345,9 @@ impl Expression {
     }
 
     pub fn from_subtract(x: Rc<Expression>, y: Rc<Expression>) -> Rc<Expression> {
-        if let Some((y1, y2)) = y.get_subtract() {
+        if let Some((y1, y2)) = y.to_subtract() {
             Expression::from_add(x, Rc::new(Expression::Subtract(y2.clone(), y1.clone())))
-        } else if let Some((x1, x2)) = x.get_subtract() {
+        } else if let Some((x1, x2)) = x.to_subtract() {
             Rc::new(Expression::Subtract(
                 x1.clone(),
                 Rc::new(Expression::Add(x2.clone(), y)),
@@ -274,9 +358,9 @@ impl Expression {
     }
 
     pub fn from_multiply(x: Rc<Expression>, y: Rc<Expression>) -> Rc<Expression> {
-        if x.get_sqrt().is_some() && y.get_sqrt().is_some() {
-            let (x_base, x_order) = x.get_sqrt().unwrap();
-            let (y_base, y_order) = y.get_sqrt().unwrap();
+        if x.is_sqrt() && y.is_sqrt() {
+            let (x_base, x_order) = x.to_sqrt().unwrap();
+            let (y_base, y_order) = y.to_sqrt().unwrap();
             let min_order = usize::min(*x_order, *y_order);
             return Expression::from_sqrt(
                 Expression::from_multiply(
@@ -286,8 +370,8 @@ impl Expression {
                 min_order,
             );
         }
-        let x0 = x.get_divide();
-        let y0 = y.get_divide();
+        let x0 = x.to_divide();
+        let y0 = y.to_divide();
         if x0.is_some() && y0.is_some() {
             Rc::new(Expression::Divide(
                 Rc::new(Expression::Multiply(
@@ -309,7 +393,7 @@ impl Expression {
                 Rc::new(Expression::Multiply(x, y0.unwrap().0.clone())),
                 y0.unwrap().1.clone(),
             ))
-        } else if let Some((y1, y2)) = y.get_multiply() {
+        } else if let Some((y1, y2)) = y.to_multiply() {
             Rc::new(Expression::Multiply(
                 Expression::from_multiply(x, y1.clone()),
                 y2.clone(),
@@ -320,9 +404,9 @@ impl Expression {
     }
 
     pub fn from_divide(x: Rc<Expression>, y: Rc<Expression>) -> Rc<Expression> {
-        if let Some((y1, y2)) = y.get_divide() {
+        if let Some((y1, y2)) = y.to_divide() {
             Expression::from_multiply(x, Rc::new(Expression::Divide(y2.clone(), y1.clone())))
-        } else if let Some((x1, x2)) = x.get_divide() {
+        } else if let Some((x1, x2)) = x.to_divide() {
             Rc::new(Expression::Divide(
                 x1.clone(),
                 Rc::new(Expression::Multiply(x2.clone(), y)),
@@ -333,12 +417,12 @@ impl Expression {
     }
 
     pub fn from_power(x: Rc<Expression>, y: Rc<Expression>) -> Rc<Expression> {
-        if let Some((x1, x2)) = x.get_power() {
+        if let Some((x1, x2)) = x.to_power() {
             Rc::new(Expression::Power(
                 x1.clone(),
                 Expression::from_multiply(x2.clone(), y),
             ))
-        } else if let Some((x0, order)) = x.get_sqrt() {
+        } else if let Some((x0, order)) = x.to_sqrt() {
             Rc::new(Expression::Sqrt(
                 Expression::from_power(x0.clone(), y),
                 *order,
@@ -351,9 +435,9 @@ impl Expression {
     pub fn from_sqrt(x: Rc<Expression>, order: usize) -> Rc<Expression> {
         if order == 0 {
             x
-        } else if let Some((y, z)) = x.get_sqrt() {
+        } else if let Some((y, z)) = x.to_sqrt() {
             Rc::new(Expression::Sqrt(y.clone(), z + order))
-        } else if let Some((y, z)) = x.get_divide() {
+        } else if let Some((y, z)) = x.to_divide() {
             Rc::new(Expression::Divide(
                 Rc::new(Expression::Sqrt(y.clone(), order)),
                 Rc::new(Expression::Sqrt(z.clone(), order)),

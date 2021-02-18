@@ -47,7 +47,7 @@ impl<T: Number> Solver<T> {
         max_depth: Option<usize>,
     ) -> Option<(Rc<Expression>, usize)> {
         self.target = target;
-        if let Some((expression, digits)) = self.get_solution(&self.target) {
+        if let Some((expression, digits)) = self.states.get(&self.target) {
             return if max_depth.unwrap_or(usize::MAX) >= *digits {
                 Some((expression.clone(), *digits))
             } else {
@@ -73,7 +73,7 @@ impl<T: Number> Solver<T> {
         digits: usize,
         expression_fn: impl FnOnce() -> Rc<Expression>,
     ) -> bool {
-        if !self.range_check(&x) || self.get_solution(&x).is_some() {
+        if !self.range_check(&x) || self.states.contains_key(&x) {
             return false;
         }
         let expression = expression_fn();
@@ -138,7 +138,7 @@ impl<'a, T: Number> Iterator for NewNumberIterator<'a, T> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let x = self.iter.next()?;
-        let (expression, digits) = self.solver.get_solution(x)?;
+        let (expression, digits) = self.solver.states.get(x)?;
         Some((x, expression, *digits))
     }
 }

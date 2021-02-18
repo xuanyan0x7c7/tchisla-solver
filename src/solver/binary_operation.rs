@@ -265,14 +265,14 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         }
         let mut found = false;
         let result = x.number / y.number;
-        if y.expression.get_divide().is_none() {
+        if !y.expression.is_divide() {
             if self.try_insert(result, x.digits + y.digits, || {
                 Expression::from_divide(x.expression.clone(), y.expression.clone())
             }) {
                 found = true;
             }
         }
-        if x.expression.get_divide().is_none() {
+        if !x.expression.is_divide() {
             if self.try_insert(result.inv(), x.digits + y.digits, || {
                 Expression::from_divide(y.expression.clone(), x.expression.clone())
             }) {
@@ -307,7 +307,7 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         }) {
             found = true;
         }
-        if x.expression.get_divide().is_none() {
+        if !x.expression.is_divide() {
             if self.try_insert(z.inv(), x.digits + y.digits, || {
                 Expression::from_sqrt(
                     Expression::from_power(
@@ -512,14 +512,14 @@ impl BinaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
         }
         let mut found = false;
         let result = x.number / y.number;
-        if y.expression.get_divide().is_none() {
+        if !y.expression.is_divide() {
             if self.try_insert(result, x.digits + y.digits, || {
                 Expression::from_divide(x.expression.clone(), y.expression.clone())
             }) {
                 found = true;
             }
         }
-        if x.expression.get_divide().is_none() {
+        if !x.expression.is_divide() {
             if self.try_insert(result.inv(), x.digits + y.digits, || {
                 Expression::from_divide(y.expression.clone(), x.expression.clone())
             }) {
@@ -556,7 +556,7 @@ impl BinaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
             )
         }) {
             true
-        } else if x.expression.get_divide().is_none() {
+        } else if !x.expression.is_divide() {
             self.try_insert(result.inv(), x.digits + y.digits, || {
                 Expression::from_sqrt(
                     Expression::from_power(

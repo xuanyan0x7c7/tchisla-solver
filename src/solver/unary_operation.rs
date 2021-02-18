@@ -31,14 +31,11 @@ pub(super) trait UnaryOperation<T: Number> {
 
 impl<T: Number> UnaryOperation<T> for Solver<T> {
     fn unary_operation(&mut self, x: State<T>) -> bool {
-        if self.n == 1
-            || !x.number.is_rational()
-            || x.number.is_one()
-            || x.expression.get_divide().is_none()
+        if self.n == 1 || !x.number.is_rational() || x.number.is_one() || !x.expression.is_divide()
         {
             return false;
         }
-        let (numerator, denominator) = x.expression.get_divide().unwrap();
+        let (numerator, denominator) = x.expression.to_divide().unwrap();
         if is_single_digit(denominator) {
             return self.division_diff_one(
                 x.number,
@@ -49,7 +46,7 @@ impl<T: Number> UnaryOperation<T> for Solver<T> {
         }
         let mut lhs: &Rc<Expression> = denominator;
         let mut rhs: Option<Rc<Expression>> = None;
-        while let Some((p, q)) = lhs.get_multiply() {
+        while let Some((p, q)) = lhs.to_multiply() {
             lhs = p;
             if is_single_digit(q) {
                 return self.division_diff_one(
