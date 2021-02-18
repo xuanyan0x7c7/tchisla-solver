@@ -358,18 +358,6 @@ impl Expression {
     }
 
     pub fn from_multiply(x: Rc<Expression>, y: Rc<Expression>) -> Rc<Expression> {
-        if x.is_sqrt() && y.is_sqrt() {
-            let (x_base, x_order) = x.to_sqrt().unwrap();
-            let (y_base, y_order) = y.to_sqrt().unwrap();
-            let min_order = usize::min(*x_order, *y_order);
-            return Expression::from_sqrt(
-                Expression::from_multiply(
-                    Expression::from_sqrt(x_base.clone(), x_order - min_order),
-                    Expression::from_sqrt(y_base.clone(), y_order - min_order),
-                ),
-                min_order,
-            );
-        }
         let x0 = x.to_divide();
         let y0 = y.to_divide();
         if x0.is_some() && y0.is_some() {
@@ -437,11 +425,16 @@ impl Expression {
             x
         } else if let Some((y, z)) = x.to_sqrt() {
             Rc::new(Expression::Sqrt(y.clone(), z + order))
+        } else if let Some((y, z)) = x.to_multiply() {
+            Expression::from_multiply(
+                Expression::from_sqrt(y.clone(), order),
+                Expression::from_sqrt(z.clone(), order),
+            )
         } else if let Some((y, z)) = x.to_divide() {
-            Rc::new(Expression::Divide(
-                Rc::new(Expression::Sqrt(y.clone(), order)),
-                Rc::new(Expression::Sqrt(z.clone(), order)),
-            ))
+            Expression::from_divide(
+                Expression::from_sqrt(y.clone(), order),
+                Expression::from_sqrt(z.clone(), order),
+            )
         } else {
             Rc::new(Expression::Sqrt(x, order))
         }
