@@ -24,10 +24,7 @@ impl Expression {
 
     #[inline]
     pub fn is_number(&self) -> bool {
-        match self {
-            Expression::Number(_) => true,
-            _ => false,
-        }
+        matches!(self, Expression::Number(_))
     }
 
     #[inline]
@@ -40,10 +37,7 @@ impl Expression {
 
     #[inline]
     pub fn is_negate(&self) -> bool {
-        match self {
-            Expression::Negate(_) => true,
-            _ => false,
-        }
+        matches!(self, Expression::Negate(_))
     }
 
     #[inline]
@@ -56,10 +50,7 @@ impl Expression {
 
     #[inline]
     pub fn is_add(&self) -> bool {
-        match self {
-            Expression::Add(_, _) => true,
-            _ => false,
-        }
+        matches!(self, Expression::Add(_, _))
     }
 
     #[inline]
@@ -72,10 +63,7 @@ impl Expression {
 
     #[inline]
     pub fn is_subtract(&self) -> bool {
-        match self {
-            Expression::Subtract(_, _) => true,
-            _ => false,
-        }
+        matches!(self, Expression::Subtract(_, _))
     }
 
     #[inline]
@@ -88,10 +76,7 @@ impl Expression {
 
     #[inline]
     pub fn is_multiply(&self) -> bool {
-        match self {
-            Expression::Multiply(_, _) => true,
-            _ => false,
-        }
+        matches!(self, Expression::Multiply(_, _))
     }
 
     #[inline]
@@ -104,10 +89,7 @@ impl Expression {
 
     #[inline]
     pub fn is_divide(&self) -> bool {
-        match self {
-            Expression::Divide(_, _) => true,
-            _ => false,
-        }
+        matches!(self, Expression::Divide(_, _))
     }
 
     #[inline]
@@ -120,10 +102,7 @@ impl Expression {
 
     #[inline]
     pub fn is_power(&self) -> bool {
-        match self {
-            Expression::Power(_, _) => true,
-            _ => false,
-        }
+        matches!(self, Expression::Power(_, _))
     }
 
     #[inline]
@@ -136,10 +115,7 @@ impl Expression {
 
     #[inline]
     pub fn is_sqrt(&self) -> bool {
-        match self {
-            Expression::Sqrt(_, _) => true,
-            _ => false,
-        }
+        matches!(self, Expression::Sqrt(_, _))
     }
 
     #[inline]
@@ -152,10 +128,7 @@ impl Expression {
 
     #[inline]
     pub fn is_factorial(&self) -> bool {
-        match self {
-            Expression::Factorial(_) => true,
-            _ => false,
-        }
+        matches!(self, Expression::Factorial(_))
     }
 
     #[inline]
@@ -313,26 +286,20 @@ impl Expression {
     pub fn from_add(x: Rc<Expression>, y: Rc<Expression>) -> Rc<Expression> {
         let x0 = x.to_subtract();
         let y0 = y.to_subtract();
-        if x0.is_some() && y0.is_some() {
+        if let (Some(x), Some(y)) = (x0, y0) {
             Rc::new(Expression::Subtract(
-                Rc::new(Expression::Add(
-                    x0.unwrap().0.clone(),
-                    y0.unwrap().0.clone(),
-                )),
-                Rc::new(Expression::Add(
-                    x0.unwrap().1.clone(),
-                    y0.unwrap().1.clone(),
-                )),
+                Rc::new(Expression::Add(x.0.clone(), y.0.clone())),
+                Rc::new(Expression::Add(x.1.clone(), y.1.clone())),
             ))
-        } else if x0.is_some() {
+        } else if let Some(x) = x0 {
             Rc::new(Expression::Subtract(
-                Rc::new(Expression::Add(x0.unwrap().0.clone(), y)),
-                x0.unwrap().1.clone(),
+                Rc::new(Expression::Add(x.0.clone(), y)),
+                x.1.clone(),
             ))
-        } else if y0.is_some() {
+        } else if let Some(y) = y0 {
             Rc::new(Expression::Subtract(
-                Rc::new(Expression::Add(x, y0.unwrap().0.clone())),
-                y0.unwrap().1.clone(),
+                Rc::new(Expression::Add(x, y.0.clone())),
+                y.1.clone(),
             ))
         } else if let Some((y1, y2)) = y.to_add() {
             Rc::new(Expression::Add(
@@ -360,26 +327,20 @@ impl Expression {
     pub fn from_multiply(x: Rc<Expression>, y: Rc<Expression>) -> Rc<Expression> {
         let x0 = x.to_divide();
         let y0 = y.to_divide();
-        if x0.is_some() && y0.is_some() {
+        if let (Some(x), Some(y)) = (x0, y0) {
             Rc::new(Expression::Divide(
-                Rc::new(Expression::Multiply(
-                    x0.unwrap().0.clone(),
-                    y0.unwrap().0.clone(),
-                )),
-                Rc::new(Expression::Multiply(
-                    x0.unwrap().1.clone(),
-                    y0.unwrap().1.clone(),
-                )),
+                Rc::new(Expression::Multiply(x.0.clone(), y.0.clone())),
+                Rc::new(Expression::Multiply(x.1.clone(), y.1.clone())),
             ))
-        } else if x0.is_some() {
+        } else if let Some(x) = x0 {
             Rc::new(Expression::Divide(
-                Rc::new(Expression::Multiply(x0.unwrap().0.clone(), y)),
-                x0.unwrap().1.clone(),
+                Rc::new(Expression::Multiply(x.0.clone(), y)),
+                x.1.clone(),
             ))
-        } else if y0.is_some() {
+        } else if let Some(y) = y0 {
             Rc::new(Expression::Divide(
-                Rc::new(Expression::Multiply(x, y0.unwrap().0.clone())),
-                y0.unwrap().1.clone(),
+                Rc::new(Expression::Multiply(x, y.0.clone())),
+                y.1.clone(),
             ))
         } else if let Some((y1, y2)) = y.to_multiply() {
             Rc::new(Expression::Multiply(

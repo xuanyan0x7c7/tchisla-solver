@@ -3,6 +3,7 @@ use crate::number_theory::{factorial, try_sqrt};
 use crate::{Expression, IntegralQuadratic, Number, RationalQuadratic};
 use num::rational::Rational64;
 use num::traits::Inv;
+use std::cmp::Ordering;
 use std::rc::Rc;
 
 fn is_single_digit(expression: &Expression) -> bool {
@@ -86,16 +87,13 @@ impl<T: Number> UnaryOperation<T> for Solver<T> {
 
     fn factorial(&mut self, x: &State<T>) -> bool {
         if let Some(n) = x.number.to_int() {
-            if n < self.limits.max_factorial as i64 {
-                self.try_insert(factorial(n).into(), x.digits, || {
+            if n < self.limits.max_factorial {
+                return self.try_insert(factorial(n).into(), x.digits, || {
                     Expression::from_factorial(x.expression.clone())
-                })
-            } else {
-                false
+                });
             }
-        } else {
-            false
         }
+        false
     }
 
     default fn division_diff_one(
@@ -128,15 +126,15 @@ impl UnaryOperation<i64> for Solver<i64> {
         denominator: Rc<Expression>,
     ) -> bool {
         let mut found = false;
-        if x > 1 {
-            if self.try_insert(x - 1, digits, || {
+        if x > 1
+            && self.try_insert(x - 1, digits, || {
                 Expression::from_divide(
                     Expression::from_subtract(numerator.clone(), denominator.clone()),
                     denominator.clone(),
                 )
-            }) {
-                found = true;
-            }
+            })
+        {
+            found = true;
         }
         if self.try_insert(x + 1, digits, || {
             Expression::from_divide(
@@ -154,15 +152,12 @@ impl UnaryOperation<Rational64> for Solver<Rational64> {
     fn sqrt(&mut self, x: &State<Rational64>) -> bool {
         if let Some(p) = try_sqrt(*x.number.numer()) {
             if let Some(q) = try_sqrt(*x.number.denom()) {
-                self.try_insert(Rational64::new_raw(p, q), x.digits, || {
+                return self.try_insert(Rational64::new_raw(p, q), x.digits, || {
                     Expression::from_sqrt(x.expression.clone(), 1)
-                })
-            } else {
-                false
+                });
             }
-        } else {
-            false
         }
+        false
     }
 
     fn division_diff_one(
@@ -173,42 +168,46 @@ impl UnaryOperation<Rational64> for Solver<Rational64> {
         denominator: Rc<Expression>,
     ) -> bool {
         let mut found = false;
-        if x.numer() < x.denom() {
-            let result = -(x - 1);
-            if self.try_insert(result, digits, || {
-                Expression::from_divide(
-                    Expression::from_subtract(denominator.clone(), numerator.clone()),
-                    denominator.clone(),
-                )
-            }) {
-                found = true;
+        match x.numer().cmp(x.denom()) {
+            Ordering::Less => {
+                let result = -(x - 1);
+                if self.try_insert(result, digits, || {
+                    Expression::from_divide(
+                        Expression::from_subtract(denominator.clone(), numerator.clone()),
+                        denominator.clone(),
+                    )
+                }) {
+                    found = true;
+                }
+                if self.try_insert(result.inv(), digits, || {
+                    Expression::from_divide(
+                        denominator.clone(),
+                        Expression::from_subtract(denominator.clone(), numerator.clone()),
+                    )
+                }) {
+                    found = true;
+                }
             }
-            if self.try_insert(result.inv(), digits, || {
-                Expression::from_divide(
-                    denominator.clone(),
-                    Expression::from_subtract(denominator.clone(), numerator.clone()),
-                )
-            }) {
-                found = true;
+            Ordering::Greater => {
+                let result = x - 1;
+                if self.try_insert(result, digits, || {
+                    Expression::from_divide(
+                        Expression::from_subtract(numerator.clone(), denominator.clone()),
+                        denominator.clone(),
+                    )
+                }) {
+                    found = true;
+                }
+                if self.try_insert(result.inv(), digits, || {
+                    Expression::from_divide(
+                        denominator.clone(),
+                        Expression::from_subtract(numerator.clone(), denominator.clone()),
+                    )
+                }) {
+                    found = true;
+                }
             }
-        } else if x.numer() > x.denom() {
-            let result = x - 1;
-            if self.try_insert(result, digits, || {
-                Expression::from_divide(
-                    Expression::from_subtract(numerator.clone(), denominator.clone()),
-                    denominator.clone(),
-                )
-            }) {
-                found = true;
-            }
-            if self.try_insert(result.inv(), digits, || {
-                Expression::from_divide(
-                    denominator.clone(),
-                    Expression::from_subtract(numerator.clone(), denominator.clone()),
-                )
-            }) {
-                found = true;
-            }
+            _ => {}
         }
         let result = x + 1;
         if self.try_insert(result, digits, || {
@@ -235,15 +234,12 @@ impl UnaryOperation<IntegralQuadratic> for Solver<IntegralQuadratic> {
     fn sqrt(&mut self, x: &State<IntegralQuadratic>) -> bool {
         if x.number.quadratic_power() < self.limits.max_quadratic_power {
             if let Some(result) = x.number.try_sqrt() {
-                self.try_insert(result, x.digits, || {
+                return self.try_insert(result, x.digits, || {
                     Expression::from_sqrt(x.expression.clone(), 1)
-                })
-            } else {
-                false
+                });
             }
-        } else {
-            false
         }
+        false
     }
 
     fn division_diff_one(
@@ -254,15 +250,15 @@ impl UnaryOperation<IntegralQuadratic> for Solver<IntegralQuadratic> {
         denominator: Rc<Expression>,
     ) -> bool {
         let mut found = false;
-        if x.integral_part() > 1 {
-            if self.try_insert(x - 1, digits, || {
+        if x.integral_part() > 1
+            && self.try_insert(x - 1, digits, || {
                 Expression::from_divide(
                     Expression::from_subtract(numerator.clone(), denominator.clone()),
                     denominator.clone(),
                 )
-            }) {
-                found = true;
-            }
+            })
+        {
+            found = true;
         }
         if self.try_insert(x + 1, digits, || {
             Expression::from_divide(
@@ -299,42 +295,46 @@ impl UnaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
         denominator: Rc<Expression>,
     ) -> bool {
         let mut found = false;
-        if x.rational_part().numer() < x.rational_part().denom() {
-            let result = -(x - 1);
-            if self.try_insert(result, digits, || {
-                Expression::from_divide(
-                    Expression::from_subtract(denominator.clone(), numerator.clone()),
-                    denominator.clone(),
-                )
-            }) {
-                found = true;
+        match x.rational_part().numer().cmp(x.rational_part().denom()) {
+            Ordering::Less => {
+                let result = -(x - 1);
+                if self.try_insert(result, digits, || {
+                    Expression::from_divide(
+                        Expression::from_subtract(denominator.clone(), numerator.clone()),
+                        denominator.clone(),
+                    )
+                }) {
+                    found = true;
+                }
+                if self.try_insert(result.inv(), digits, || {
+                    Expression::from_divide(
+                        denominator.clone(),
+                        Expression::from_subtract(denominator.clone(), numerator.clone()),
+                    )
+                }) {
+                    found = true;
+                }
             }
-            if self.try_insert(result.inv(), digits, || {
-                Expression::from_divide(
-                    denominator.clone(),
-                    Expression::from_subtract(denominator.clone(), numerator.clone()),
-                )
-            }) {
-                found = true;
+            Ordering::Greater => {
+                let result = x - 1;
+                if self.try_insert(result, digits, || {
+                    Expression::from_divide(
+                        Expression::from_subtract(numerator.clone(), denominator.clone()),
+                        denominator.clone(),
+                    )
+                }) {
+                    found = true;
+                }
+                if self.try_insert(result.inv(), digits, || {
+                    Expression::from_divide(
+                        denominator.clone(),
+                        Expression::from_subtract(numerator.clone(), denominator.clone()),
+                    )
+                }) {
+                    found = true;
+                }
             }
-        } else if x.rational_part().numer() > x.rational_part().denom() {
-            let result = x - 1;
-            if self.try_insert(result, digits, || {
-                Expression::from_divide(
-                    Expression::from_subtract(numerator.clone(), denominator.clone()),
-                    denominator.clone(),
-                )
-            }) {
-                found = true;
-            }
-            if self.try_insert(result.inv(), digits, || {
-                Expression::from_divide(
-                    denominator.clone(),
-                    Expression::from_subtract(numerator.clone(), denominator.clone()),
-                )
-            }) {
-                found = true;
-            }
+            _ => {}
         }
         let result = x + 1;
         if self.try_insert(result, digits, || {

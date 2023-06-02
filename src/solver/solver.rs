@@ -1,6 +1,6 @@
 use super::{Limits, RangeCheck, SearchState, Searcher, Solver, State, UnaryOperation};
 use crate::{Expression, Number};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::rc::Rc;
 use std::slice::Iter;
 
@@ -9,7 +9,7 @@ impl<T: Number> Solver<T> {
         Self {
             n,
             target: T::zero(),
-            states: HashMap::new(),
+            states: FxHashMap::default(),
             states_by_depth: vec![],
             extra_states_by_depth: vec![],
             depth_searched: 0,
@@ -24,7 +24,7 @@ impl<T: Number> Solver<T> {
         Self {
             n,
             target: T::zero(),
-            states: HashMap::new(),
+            states: FxHashMap::default(),
             states_by_depth: vec![],
             extra_states_by_depth: vec![],
             depth_searched: 0,
@@ -54,7 +54,7 @@ impl<T: Number> Solver<T> {
                 None
             };
         }
-        for digits in self.depth_searched + 1..=max_depth.unwrap_or(usize::MAX) {
+        for digits in (self.depth_searched + 1)..=max_depth.unwrap_or(usize::MAX) {
             if self.search(digits) {
                 return Some(self.states.get(&self.target)?.clone());
             }

@@ -4,9 +4,6 @@ use crate::Number;
 use num::rational::Rational64;
 use num::traits::{Inv, Pow};
 use num::{Integer, Num, One, Signed, Zero};
-use opimps;
-use std::fmt;
-use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
 impl RationalQuadratic {
     #[inline]
@@ -25,8 +22,8 @@ impl RationalQuadratic {
     }
 }
 
-impl fmt::Display for RationalQuadratic {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl std::fmt::Display for RationalQuadratic {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.is_rational() {
             write!(f, "{}", self.rational_part)
         } else {
@@ -135,7 +132,7 @@ impl One for RationalQuadratic {
     }
 }
 
-#[opimps::impl_uni_ops(Neg)]
+#[opimps::impl_uni_ops(std::ops::Neg)]
 #[inline]
 fn neg(self: RationalQuadratic) -> RationalQuadratic {
     RationalQuadratic {
@@ -175,7 +172,7 @@ impl Signed for RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Add)]
+#[opimps::impl_ops(std::ops::Add)]
 fn add(self: RationalQuadratic, rhs: RationalQuadratic) -> RationalQuadratic {
     if self.is_zero() {
         rhs.clone()
@@ -195,7 +192,7 @@ fn add(self: RationalQuadratic, rhs: RationalQuadratic) -> RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Add)]
+#[opimps::impl_ops(std::ops::Add)]
 #[inline]
 fn add(self: RationalQuadratic, rhs: i64) -> RationalQuadratic {
     RationalQuadratic {
@@ -205,7 +202,7 @@ fn add(self: RationalQuadratic, rhs: i64) -> RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Add)]
+#[opimps::impl_ops(std::ops::Add)]
 #[inline]
 fn add(self: RationalQuadratic, rhs: Rational64) -> RationalQuadratic {
     RationalQuadratic {
@@ -215,7 +212,7 @@ fn add(self: RationalQuadratic, rhs: Rational64) -> RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Sub)]
+#[opimps::impl_ops(std::ops::Sub)]
 fn sub(self: RationalQuadratic, rhs: RationalQuadratic) -> RationalQuadratic {
     if self.is_zero() {
         -rhs
@@ -232,7 +229,7 @@ fn sub(self: RationalQuadratic, rhs: RationalQuadratic) -> RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Sub)]
+#[opimps::impl_ops(std::ops::Sub)]
 #[inline]
 fn sub(self: RationalQuadratic, rhs: i64) -> RationalQuadratic {
     RationalQuadratic {
@@ -242,7 +239,7 @@ fn sub(self: RationalQuadratic, rhs: i64) -> RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Sub)]
+#[opimps::impl_ops(std::ops::Sub)]
 #[inline]
 fn sub(self: RationalQuadratic, rhs: Rational64) -> RationalQuadratic {
     RationalQuadratic {
@@ -252,7 +249,7 @@ fn sub(self: RationalQuadratic, rhs: Rational64) -> RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Mul)]
+#[opimps::impl_ops(std::ops::Mul)]
 fn mul(self: RationalQuadratic, rhs: RationalQuadratic) -> RationalQuadratic {
     let mut rational_part = self.rational_part * rhs.rational_part;
     if rational_part.is_zero() {
@@ -266,15 +263,15 @@ fn mul(self: RationalQuadratic, rhs: RationalQuadratic) -> RationalQuadratic {
                 << (quadratic_power - self.quadratic_power))
                 + (rhs.quadratic_part[i] << (quadratic_power - rhs.quadratic_power));
         }
-        for (prime, power) in PRIMES.iter().zip(quadratic_part.iter_mut()) {
+        for (&prime, power) in PRIMES.iter().zip(&mut quadratic_part) {
             if *power >= 1 << quadratic_power {
                 *power &= (1 << quadratic_power) - 1;
                 rational_part *= prime;
             }
         }
-        while quadratic_power > 0 && quadratic_part.iter().all(|x| x % 2 == 0) {
+        while quadratic_power > 0 && quadratic_part.iter().all(|&x| x % 2 == 0) {
             quadratic_power -= 1;
-            for x in quadratic_part.iter_mut() {
+            for x in &mut quadratic_part {
                 *x >>= 1;
             }
         }
@@ -286,7 +283,7 @@ fn mul(self: RationalQuadratic, rhs: RationalQuadratic) -> RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Mul)]
+#[opimps::impl_ops(std::ops::Mul)]
 #[inline]
 fn mul(self: RationalQuadratic, rhs: i64) -> RationalQuadratic {
     if rhs.is_zero() {
@@ -300,7 +297,7 @@ fn mul(self: RationalQuadratic, rhs: i64) -> RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Mul)]
+#[opimps::impl_ops(std::ops::Mul)]
 #[inline]
 fn mul(self: RationalQuadratic, rhs: Rational64) -> RationalQuadratic {
     if rhs.is_zero() {
@@ -354,7 +351,7 @@ impl Inv for &RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Div)]
+#[opimps::impl_ops(std::ops::Div)]
 fn div(self: RationalQuadratic, rhs: RationalQuadratic) -> RationalQuadratic {
     let mut rational_part = self.rational_part / rhs.rational_part;
     if rational_part.is_zero() {
@@ -373,9 +370,9 @@ fn div(self: RationalQuadratic, rhs: RationalQuadratic) -> RationalQuadratic {
                 quadratic_part[i] = x - y;
             }
         }
-        while quadratic_power > 0 && quadratic_part.iter().all(|x| x % 2 == 0) {
+        while quadratic_power > 0 && quadratic_part.iter().all(|&x| x % 2 == 0) {
             quadratic_power -= 1;
-            for x in quadratic_part.iter_mut() {
+            for x in &mut quadratic_part {
                 *x >>= 1;
             }
         }
@@ -387,7 +384,7 @@ fn div(self: RationalQuadratic, rhs: RationalQuadratic) -> RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Div)]
+#[opimps::impl_ops(std::ops::Div)]
 #[inline]
 fn div(self: RationalQuadratic, rhs: i64) -> RationalQuadratic {
     RationalQuadratic {
@@ -397,7 +394,7 @@ fn div(self: RationalQuadratic, rhs: i64) -> RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Div)]
+#[opimps::impl_ops(std::ops::Div)]
 #[inline]
 fn div(self: RationalQuadratic, rhs: Rational64) -> RationalQuadratic {
     RationalQuadratic {
@@ -407,7 +404,7 @@ fn div(self: RationalQuadratic, rhs: Rational64) -> RationalQuadratic {
     }
 }
 
-#[opimps::impl_ops(Rem)]
+#[opimps::impl_ops(std::ops::Rem)]
 #[inline]
 fn rem(self: RationalQuadratic, _rhs: RationalQuadratic) -> RationalQuadratic {
     RationalQuadratic::zero()
@@ -429,10 +426,10 @@ impl Pow<i32> for RationalQuadratic {
             power >>= 1;
         }
         for i in 0..PRIMES.len() {
-            let prime_power =
+            let (q, r) =
                 ((self.quadratic_part[i] as i32) * power).div_mod_floor(&(1 << quadratic_power));
-            rational_part *= Rational64::from(PRIMES[i]).pow(prime_power.0);
-            quadratic_part[i] = prime_power.1 as u8;
+            rational_part *= Rational64::from(PRIMES[i]).pow(q);
+            quadratic_part[i] = r as u8;
         }
         Self {
             rational_part,
@@ -466,27 +463,27 @@ impl RationalQuadratic {
         let mut denominator = 1;
         for i in 0..PRIMES.len() {
             let prime = PRIMES[i];
-            while p % (prime as i64).pow(2) == 0 {
+            while p % (prime * prime) == 0 {
                 numerator *= prime;
-                p /= (prime as i64).pow(2);
+                p /= prime * prime;
             }
-            if p % (prime as i64) == 0 {
+            if p % prime == 0 {
                 quadratic_part[i] |= 1 << (quadratic_power - 1);
-                p /= prime as i64;
+                p /= prime;
             }
-            while q % (prime as i64).pow(2) == 0 {
+            while q % (prime * prime) == 0 {
                 denominator *= prime;
-                q /= (prime as i64).pow(2);
+                q /= prime * prime;
             }
-            if q % (prime as i64) == 0 {
+            if q % prime == 0 {
                 denominator *= prime;
                 quadratic_part[i] |= 1 << (quadratic_power - 1);
-                q /= prime as i64;
+                q /= prime;
             }
         }
         numerator *= try_sqrt(p)?;
         denominator *= try_sqrt(q)?;
-        if quadratic_part.iter().all(|x| *x == 0) {
+        if quadratic_part.iter().all(|&x| x == 0) {
             quadratic_power = 0;
         }
         Some(Self {

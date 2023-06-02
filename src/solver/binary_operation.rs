@@ -109,14 +109,10 @@ impl<T: Number> BinaryOperation<T> for Solver<T> {
         let mut x = x;
         let mut y = y;
         if x_int < y_int {
-            let temp = x;
-            x = y;
-            y = temp;
-            let temp = x_int;
-            x_int = y_int;
-            y_int = temp;
+            (x, y) = (y, x);
+            (x_int, y_int) = (y_int, x_int);
         }
-        if x_int <= self.limits.max_factorial as i64
+        if x_int <= self.limits.max_factorial
             || y_int <= 2
             || x_int - y_int == 1
             || (x_int - y_int) as f64 * (x_int.digits() + y_int.digits())
@@ -265,19 +261,19 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         }
         let mut found = false;
         let result = x.number / y.number;
-        if !y.expression.is_divide() {
-            if self.try_insert(result, x.digits + y.digits, || {
+        if !y.expression.is_divide()
+            && self.try_insert(result, x.digits + y.digits, || {
                 Expression::from_divide(x.expression.clone(), y.expression.clone())
-            }) {
-                found = true;
-            }
+            })
+        {
+            found = true;
         }
-        if !x.expression.is_divide() {
-            if self.try_insert(result.inv(), x.digits + y.digits, || {
+        if !x.expression.is_divide()
+            && self.try_insert(result.inv(), x.digits + y.digits, || {
                 Expression::from_divide(y.expression.clone(), x.expression.clone())
-            }) {
-                found = true;
-            }
+            })
+        {
+            found = true;
         }
         found
     }
@@ -307,8 +303,8 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         }) {
             found = true;
         }
-        if !x.expression.is_divide() {
-            if self.try_insert(z.inv(), x.digits + y.digits, || {
+        if !x.expression.is_divide()
+            && self.try_insert(z.inv(), x.digits + y.digits, || {
                 Expression::from_sqrt(
                     Expression::from_power(
                         x.expression.clone(),
@@ -316,9 +312,9 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
                     ),
                     sqrt_order,
                 )
-            }) {
-                found = true;
-            }
+            })
+        {
+            found = true;
         }
         found
     }
@@ -332,14 +328,10 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         let mut x = x;
         let mut y = y;
         if x_int < y_int {
-            let temp = x;
-            x = y;
-            y = temp;
-            let temp = x_int;
-            x_int = y_int;
-            y_int = temp;
+            (x, y) = (y, x);
+            (x_int, y_int) = (y_int, x_int);
         }
-        if x_int <= self.limits.max_factorial as i64
+        if x_int <= self.limits.max_factorial
             || y_int <= 2
             || x_int - y_int == 1
             || (x_int - y_int) as f64 * (x_int.digits() + y_int.digits())
@@ -512,19 +504,19 @@ impl BinaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
         }
         let mut found = false;
         let result = x.number / y.number;
-        if !y.expression.is_divide() {
-            if self.try_insert(result, x.digits + y.digits, || {
+        if !y.expression.is_divide()
+            && self.try_insert(result, x.digits + y.digits, || {
                 Expression::from_divide(x.expression.clone(), y.expression.clone())
-            }) {
-                found = true;
-            }
+            })
+        {
+            found = true;
         }
-        if !x.expression.is_divide() {
-            if self.try_insert(result.inv(), x.digits + y.digits, || {
+        if !x.expression.is_divide()
+            && self.try_insert(result.inv(), x.digits + y.digits, || {
                 Expression::from_divide(y.expression.clone(), x.expression.clone())
-            }) {
-                found = true;
-            }
+            })
+        {
+            found = true;
         }
         found
     }
@@ -584,14 +576,10 @@ impl BinaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
         let mut x = x;
         let mut y = y;
         if x_int < y_int {
-            let temp = x;
-            x = y;
-            y = temp;
-            let temp = x_int;
-            x_int = y_int;
-            y_int = temp;
+            (x, y) = (y, x);
+            (x_int, y_int) = (y_int, x_int);
         }
-        if x_int <= self.limits.max_factorial as i64
+        if x_int <= self.limits.max_factorial
             || y_int <= 2
             || x_int - y_int == 1
             || (x_int - y_int) as f64 * (x_int.digits() + y_int.digits())

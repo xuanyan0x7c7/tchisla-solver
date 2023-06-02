@@ -1,17 +1,16 @@
 use crate::{Expression, Number};
-use std::collections::HashMap;
+use binary_operation::BinaryOperation;
+use range_check::RangeCheck;
+use rustc_hash::FxHashMap;
+use searcher::Searcher;
 use std::rc::Rc;
+use unary_operation::UnaryOperation;
 
 mod binary_operation;
 mod range_check;
 mod searcher;
 mod solver;
 mod unary_operation;
-
-use binary_operation::BinaryOperation;
-use range_check::RangeCheck;
-use searcher::Searcher;
-use unary_operation::UnaryOperation;
 
 #[derive(Clone, Copy)]
 pub struct Limits {
@@ -41,7 +40,7 @@ enum SearchState {
 pub struct Solver<T: Number> {
     n: i64,
     target: T,
-    states: HashMap<T, (Rc<Expression>, usize)>,
+    states: FxHashMap<T, (Rc<Expression>, usize)>,
     states_by_depth: Vec<Vec<T>>,
     extra_states_by_depth: Vec<Vec<(T, Rc<Expression>)>>,
     depth_searched: usize,

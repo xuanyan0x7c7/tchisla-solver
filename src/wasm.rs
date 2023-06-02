@@ -39,7 +39,7 @@ struct Solution {
 
 fn _serialize_output(solution: Option<(Rc<Expression>, usize)>) -> JsValue {
     if let Some((expression, digits)) = solution {
-        JsValue::from_serde(&Solution {
+        serde_wasm_bindgen::to_value(&Solution {
             digits,
             expression: expression.to_latex_string(),
         })
@@ -50,9 +50,9 @@ fn _serialize_output(solution: Option<(Rc<Expression>, usize)>) -> JsValue {
 }
 
 #[wasm_bindgen(js_name = solveIntegral)]
-pub fn _solve_integral(n: i32, target: i32, config: &JsValue) -> JsValue {
-    let config: Config = config.into_serde().unwrap();
-    let mut solver = Solver::<i64>::new(
+pub fn _solve_integral(n: i32, target: i32, config: JsValue) -> JsValue {
+    let config: Config = serde_wasm_bindgen::from_value(config).unwrap();
+    let mut solver = Solver::new(
         n as i64,
         Limits {
             max_digits: config.max_digits,
@@ -71,9 +71,9 @@ pub fn _solve_integral(n: i32, target: i32, config: &JsValue) -> JsValue {
 }
 
 #[wasm_bindgen(js_name = solveRational)]
-pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
-    let config: Config = config.into_serde().unwrap();
-    let mut solver = Solver::<Rational64>::new(
+pub fn _solve_rational(n: i32, target: i32, config: JsValue) -> JsValue {
+    let config: Config = serde_wasm_bindgen::from_value(config).unwrap();
+    let mut solver = Solver::new(
         n as i64,
         Limits {
             max_digits: config.max_digits,
@@ -82,7 +82,7 @@ pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
         },
     );
     _serialize_output(solver.solve(
-        (target as i64).into(),
+        Rational64::from(target as i64),
         if config.max_depth == 0 {
             None
         } else {
@@ -92,9 +92,9 @@ pub fn _solve_rational(n: i32, target: i32, config: &JsValue) -> JsValue {
 }
 
 #[wasm_bindgen(js_name = solveIntegralQuadratic)]
-pub fn _solve_integral_quadratic(n: i32, target: i32, config: &JsValue) -> JsValue {
-    let config: QuadraticConfig = config.into_serde().unwrap();
-    let mut solver = Solver::<IntegralQuadratic>::new(
+pub fn _solve_integral_quadratic(n: i32, target: i32, config: JsValue) -> JsValue {
+    let config: QuadraticConfig = serde_wasm_bindgen::from_value(config).unwrap();
+    let mut solver = Solver::new(
         n as i64,
         Limits {
             max_digits: config.max_digits,
@@ -103,7 +103,7 @@ pub fn _solve_integral_quadratic(n: i32, target: i32, config: &JsValue) -> JsVal
         },
     );
     _serialize_output(solver.solve(
-        (target as i64).into(),
+        IntegralQuadratic::from(target as i64),
         if config.max_depth == 0 {
             None
         } else {
@@ -113,9 +113,9 @@ pub fn _solve_integral_quadratic(n: i32, target: i32, config: &JsValue) -> JsVal
 }
 
 #[wasm_bindgen(js_name = solveRatinoalQuadratic)]
-pub fn _solve_ratinoal_quadratic(n: i32, target: i32, config: &JsValue) -> JsValue {
-    let config: QuadraticConfig = config.into_serde().unwrap();
-    let mut solver = Solver::<RationalQuadratic>::new(
+pub fn _solve_ratinoal_quadratic(n: i32, target: i32, config: JsValue) -> JsValue {
+    let config: QuadraticConfig = serde_wasm_bindgen::from_value(config).unwrap();
+    let mut solver = Solver::new(
         n as i64,
         Limits {
             max_digits: config.max_digits,
@@ -124,7 +124,7 @@ pub fn _solve_ratinoal_quadratic(n: i32, target: i32, config: &JsValue) -> JsVal
         },
     );
     _serialize_output(solver.solve(
-        (target as i64).into(),
+        RationalQuadratic::from(target as i64),
         if config.max_depth == 0 {
             None
         } else {
@@ -141,8 +141,8 @@ pub struct ProgressiveSolver {
 #[wasm_bindgen]
 impl ProgressiveSolver {
     #[wasm_bindgen(constructor)]
-    pub fn new(n: i32, target: i32, config: &JsValue) -> Self {
-        let config: ProgressiveConfig = config.into_serde().unwrap();
+    pub fn new(n: i32, target: i32, config: JsValue) -> Self {
+        let config: ProgressiveConfig = serde_wasm_bindgen::from_value(config).unwrap();
         Self {
             solver: crate::ProgressiveSolver::new(
                 n as i64,

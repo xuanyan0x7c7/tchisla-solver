@@ -11,17 +11,9 @@ pub fn try_sqrt(n: i64) -> Option<i64> {
 }
 
 pub fn factorial(n: i64) -> i64 {
-    let mut result = 1i64;
-    for x in 2..=n {
-        result *= x;
-    }
-    result
+    (2..=n).product::<i64>()
 }
 
 pub fn factorial_divide(m: i64, n: i64) -> i64 {
-    let mut result = 1i64;
-    for x in (n + 1)..=m {
-        result *= x;
-    }
-    result
+    ((n + 1)..=m).product::<i64>()
 }

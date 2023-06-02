@@ -9,9 +9,9 @@ fn parse_problem() -> Option<(i64, i64, bool)> {
     if let Some(index) = args[1].find('#') {
         let target = args[1][..index].parse();
         let n = args[1][(index + 1)..].parse();
-        if n.is_ok() && target.is_ok() {
+        if let (Ok(n), Ok(target)) = (n, target) {
             let verbose = args.len() > 2 && args[2] == "--verbose";
-            Some((n.unwrap(), target.unwrap(), verbose))
+            Some((n, target, verbose))
         } else {
             None
         }

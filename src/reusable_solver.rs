@@ -69,77 +69,65 @@ impl ReusableSolver {
     }
 
     fn search(&mut self, digits: usize) -> bool {
-        match self.search_state {
-            ReusableSearchState::None => {
-                self.search_state = ReusableSearchState::Integral;
-            }
-            _ => {}
+        if let ReusableSearchState::None = self.search_state {
+            self.search_state = ReusableSearchState::Integral;
         }
-        match self.search_state {
-            ReusableSearchState::Integral => {
-                if self
-                    .integral_solver
-                    .solve(self.target, Some(digits))
-                    .is_some()
-                {
-                    return true;
+        if let ReusableSearchState::Integral = self.search_state {
+            if self
+                .integral_solver
+                .solve(self.target, Some(digits))
+                .is_some()
+            {
+                return true;
+            }
+            for (&x, expression, _) in self.integral_solver.new_numbers() {
+                self.rational_solver
+                    .try_insert(x.into(), digits, || expression.clone());
+                self.rational_quadratic_solver
+                    .try_insert(x.into(), digits, || expression.clone());
+            }
+            self.clear_new_numbers();
+            self.search_state = ReusableSearchState::Rational;
+        }
+        if let ReusableSearchState::Rational = self.search_state {
+            if self
+                .rational_solver
+                .solve(self.target.into(), Some(digits))
+                .is_some()
+            {
+                return true;
+            }
+            for (x, expression, _) in self.rational_solver.new_numbers() {
+                if let Some(x_int) = x.to_int() {
+                    self.integral_solver
+                        .try_insert(x_int, digits, || expression.clone());
                 }
-                for (x, expression, _) in self.integral_solver.new_numbers() {
+                self.rational_quadratic_solver
+                    .try_insert((*x).into(), digits, || expression.clone());
+            }
+            self.clear_new_numbers();
+            self.search_state = ReusableSearchState::RationalQuadratic;
+        }
+        if let ReusableSearchState::RationalQuadratic = self.search_state {
+            if self
+                .rational_quadratic_solver
+                .solve(self.target.into(), Some(digits))
+                .is_some()
+            {
+                return true;
+            }
+            for (x, expression, _) in self.rational_quadratic_solver.new_numbers() {
+                if let Some(x_int) = x.to_int() {
+                    self.integral_solver
+                        .try_insert(x_int, digits, || expression.clone());
+                }
+                if x.is_rational() {
                     self.rational_solver
-                        .try_insert((*x).into(), digits, || expression.clone());
-                    self.rational_quadratic_solver
-                        .try_insert((*x).into(), digits, || expression.clone());
+                        .try_insert(x.rational_part(), digits, || expression.clone());
                 }
-                self.clear_new_numbers();
-                self.search_state = ReusableSearchState::Rational;
             }
-            _ => {}
-        }
-        match self.search_state {
-            ReusableSearchState::Rational => {
-                if self
-                    .rational_solver
-                    .solve(self.target.into(), Some(digits))
-                    .is_some()
-                {
-                    return true;
-                }
-                for (x, expression, _) in self.rational_solver.new_numbers() {
-                    if let Some(x_int) = x.to_int() {
-                        self.integral_solver
-                            .try_insert(x_int, digits, || expression.clone());
-                    }
-                    self.rational_quadratic_solver
-                        .try_insert((*x).into(), digits, || expression.clone());
-                }
-                self.clear_new_numbers();
-                self.search_state = ReusableSearchState::RationalQuadratic;
-            }
-            _ => {}
-        }
-        match self.search_state {
-            ReusableSearchState::RationalQuadratic => {
-                if self
-                    .rational_quadratic_solver
-                    .solve(self.target.into(), Some(digits))
-                    .is_some()
-                {
-                    return true;
-                }
-                for (x, expression, _) in self.rational_quadratic_solver.new_numbers() {
-                    if let Some(x_int) = x.to_int() {
-                        self.integral_solver
-                            .try_insert(x_int, digits, || expression.clone());
-                    }
-                    if x.is_rational() {
-                        self.rational_solver
-                            .try_insert(x.rational_part(), digits, || expression.clone());
-                    }
-                }
-                self.clear_new_numbers();
-                self.search_state = ReusableSearchState::Finished;
-            }
-            _ => {}
+            self.clear_new_numbers();
+            self.search_state = ReusableSearchState::Finished;
         }
         self.depth_searched = digits;
         self.search_state = ReusableSearchState::None;

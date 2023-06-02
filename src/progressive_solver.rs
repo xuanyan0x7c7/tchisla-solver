@@ -74,95 +74,80 @@ impl ProgressiveSolver {
     }
 
     fn search(&mut self, digits: usize) -> bool {
-        match self.search_state {
-            ProgressiveSearchState::None => {
-                self.search_state = ProgressiveSearchState::Integral;
-            }
-            _ => {}
+        if let ProgressiveSearchState::None = self.search_state {
+            self.search_state = ProgressiveSearchState::Integral;
         }
-        match self.search_state {
-            ProgressiveSearchState::Integral => {
-                if self
-                    .integral_solver
-                    .solve(self.target, Some(digits))
-                    .is_some()
-                {
-                    return true;
+        if let ProgressiveSearchState::Integral = self.search_state {
+            if self
+                .integral_solver
+                .solve(self.target, Some(digits))
+                .is_some()
+            {
+                return true;
+            }
+            for (x, expression, _) in self.integral_solver.new_numbers() {
+                self.rational_solver
+                    .try_insert((*x).into(), digits, || expression.clone());
+                self.quadratic_solver
+                    .try_insert((*x).into(), digits, || expression.clone());
+            }
+            self.clear_new_numbers();
+            self.search_state = ProgressiveSearchState::FullIntegral;
+        }
+        if let ProgressiveSearchState::FullIntegral = self.search_state {
+            let mut found = false;
+            if digits >= 3 && digits < self.max_depth.unwrap_or(usize::MAX) {
+                self.full_integral_solver
+                    .clone_non_pregressive_from(&self.integral_solver);
+                found = self
+                    .full_integral_solver
+                    .solve(self.target, self.max_depth)
+                    .is_some();
+            }
+            self.search_state = ProgressiveSearchState::Rational;
+            if found {
+                return true;
+            }
+        }
+        if let ProgressiveSearchState::Rational = self.search_state {
+            if self
+                .rational_solver
+                .solve(self.target.into(), Some(digits))
+                .is_some()
+            {
+                return true;
+            }
+            for (x, expression, _) in self.rational_solver.new_numbers() {
+                if let Some(x_int) = x.to_int() {
+                    self.integral_solver
+                        .try_insert(x_int, digits, || expression.clone());
                 }
-                for (x, expression, _) in self.integral_solver.new_numbers() {
+                self.quadratic_solver
+                    .try_insert((*x).into(), digits, || expression.clone());
+            }
+            self.clear_new_numbers();
+            self.search_state = ProgressiveSearchState::RationalQuadratic;
+        }
+        if let ProgressiveSearchState::RationalQuadratic = self.search_state {
+            if self
+                .quadratic_solver
+                .solve(self.target.into(), Some(digits))
+                .is_some()
+            {
+                return true;
+            }
+            for (x, expression, _) in self.quadratic_solver.new_numbers() {
+                if let Some(x_int) = x.to_int() {
+                    self.integral_solver
+                        .try_insert(x_int, digits, || expression.clone());
+                }
+                if x.is_rational() {
                     self.rational_solver
-                        .try_insert((*x).into(), digits, || expression.clone());
-                    self.quadratic_solver
-                        .try_insert((*x).into(), digits, || expression.clone());
-                }
-                self.clear_new_numbers();
-                self.search_state = ProgressiveSearchState::FullIntegral;
-            }
-            _ => {}
-        }
-        match self.search_state {
-            ProgressiveSearchState::FullIntegral => {
-                let mut found = false;
-                if digits >= 3 && digits < self.max_depth.unwrap_or(usize::MAX) {
-                    self.full_integral_solver
-                        .clone_non_pregressive_from(&self.integral_solver);
-                    found = self
-                        .full_integral_solver
-                        .solve(self.target, self.max_depth)
-                        .is_some();
-                }
-                self.search_state = ProgressiveSearchState::Rational;
-                if found {
-                    return true;
+                        .try_insert(x.rational_part(), digits, || expression.clone());
                 }
             }
-            _ => {}
-        }
-        match self.search_state {
-            ProgressiveSearchState::Rational => {
-                if self
-                    .rational_solver
-                    .solve(self.target.into(), Some(digits))
-                    .is_some()
-                {
-                    return true;
-                }
-                for (x, expression, _) in self.rational_solver.new_numbers() {
-                    if let Some(x_int) = x.to_int() {
-                        self.integral_solver
-                            .try_insert(x_int, digits, || expression.clone());
-                    }
-                    self.quadratic_solver
-                        .try_insert((*x).into(), digits, || expression.clone());
-                }
-                self.clear_new_numbers();
-                self.search_state = ProgressiveSearchState::RationalQuadratic;
-            }
-            _ => {}
-        }
-        match self.search_state {
-            ProgressiveSearchState::RationalQuadratic => {
-                if self
-                    .quadratic_solver
-                    .solve(self.target.into(), Some(digits))
-                    .is_some()
-                {
-                    return true;
-                }
-                for (x, expression, _) in self.quadratic_solver.new_numbers() {
-                    if let Some(x_int) = x.to_int() {
-                        self.integral_solver
-                            .try_insert(x_int, digits, || expression.clone());
-                    }
-                    if x.is_rational() {
-                        self.rational_solver
-                            .try_insert(x.rational_part(), digits, || expression.clone());
-                    }
-                }
-                self.clear_new_numbers();
-                self.search_state = ProgressiveSearchState::Finished;
-            }
-            _ => {}
+            self.clear_new_numbers();
+            self.search_state = ProgressiveSearchState::Finished;
         }
         self.depth_searched = digits;
         self.search_state = ProgressiveSearchState::None;
