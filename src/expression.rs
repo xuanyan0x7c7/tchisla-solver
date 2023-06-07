@@ -157,27 +157,27 @@ fn fmt_binary(
     rtl: bool,
 ) -> fmt::Result {
     let lhs = if x.precedence() < precedence || (x.precedence() == precedence && rtl && !abelian) {
-        format!("({})", x)
+        format!("({x})")
     } else {
-        format!("{}", x)
+        format!("{x}")
     };
     let rhs = if y.precedence() < precedence || (y.precedence() == precedence && !rtl && !abelian) {
-        format!("({})", y)
+        format!("({y})")
     } else {
-        format!("{}", y)
+        format!("{y}")
     };
-    write!(f, "{}{}{}", lhs, operator, rhs)
+    write!(f, "{lhs}{operator}{rhs}")
 }
 
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Expression::Number(x) => write!(f, "{}", x),
+            Expression::Number(x) => write!(f, "{x}"),
             Expression::Negate(x) => {
                 if x.is_add() || x.is_subtract() {
-                    write!(f, "-({})", x)
+                    write!(f, "-({x})")
                 } else {
-                    write!(f, "-{}", x)
+                    write!(f, "-{x}")
                 }
             }
             Expression::Add(x, y) => fmt_binary(f, x, y, "+", self.precedence(), true, false),
@@ -186,13 +186,13 @@ impl fmt::Display for Expression {
             Expression::Divide(x, y) => fmt_binary(f, x, y, "/", self.precedence(), false, false),
             Expression::Power(x, y) => fmt_binary(f, x, y, "^", self.precedence(), false, true),
             Expression::Sqrt(x, order) => {
-                write!(f, "{}{}{}", "sqrt(".repeat(*order), x, ")".repeat(*order))
+                write!(f, "{}{x}{}", "sqrt(".repeat(*order), ")".repeat(*order))
             }
             Expression::Factorial(x) => {
                 if x.is_number() {
-                    write!(f, "{}!", x)
+                    write!(f, "{x}!")
                 } else {
-                    write!(f, "({})!", x)
+                    write!(f, "({x})!")
                 }
             }
         }

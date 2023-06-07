@@ -45,15 +45,16 @@ impl ReusableSolver {
         target: i64,
         max_depth: Option<usize>,
     ) -> Option<(Rc<Expression>, usize)> {
+        let max_depth = max_depth.unwrap_or(usize::MAX);
         self.target = target;
         if let Some((expression, digits)) = self.get_solution(&self.target) {
-            return if max_depth.unwrap_or(usize::MAX) >= *digits {
+            return if max_depth >= *digits {
                 Some((expression.clone(), *digits))
             } else {
                 None
             };
         }
-        for digits in self.depth_searched + 1..=max_depth.unwrap_or(usize::MAX) {
+        for digits in self.depth_searched + 1..=max_depth {
             if self.search(digits) {
                 return Some(self.get_solution(&self.target)?.clone());
             }

@@ -3,6 +3,8 @@ use crate::number_theory::try_sqrt;
 use crate::Number;
 use num::traits::Pow;
 use num::{Integer, Num, One, Signed, Zero};
+use std::fmt;
+use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
 impl IntegralQuadratic {
     #[inline]
@@ -21,8 +23,8 @@ impl IntegralQuadratic {
     }
 }
 
-impl std::fmt::Display for IntegralQuadratic {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl fmt::Display for IntegralQuadratic {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.quadratic_power == 0 {
             write!(f, "{}", self.integral_part)
         } else {
@@ -38,11 +40,11 @@ impl std::fmt::Display for IntegralQuadratic {
                 ")".repeat(self.quadratic_power as usize)
             );
             if self.integral_part == 1 {
-                write!(f, "{}", quadratic_string)
+                write!(f, "{quadratic_string}")
             } else if self.integral_part == -1 {
-                write!(f, "-{}", quadratic_string)
+                write!(f, "-{quadratic_string}")
             } else {
-                write!(f, "{}*{}", self.integral_part, quadratic_string)
+                write!(f, "{}*{quadratic_string}", self.integral_part)
             }
         }
     }
@@ -120,7 +122,7 @@ impl One for IntegralQuadratic {
     }
 }
 
-#[opimps::impl_uni_ops(std::ops::Neg)]
+#[opimps::impl_uni_ops(Neg)]
 #[inline]
 fn neg(self: IntegralQuadratic) -> IntegralQuadratic {
     IntegralQuadratic {
@@ -160,7 +162,7 @@ impl Signed for IntegralQuadratic {
     }
 }
 
-#[opimps::impl_ops(std::ops::Add)]
+#[opimps::impl_ops(Add)]
 fn add(self: IntegralQuadratic, rhs: IntegralQuadratic) -> IntegralQuadratic {
     if self.is_zero() {
         rhs.clone()
@@ -180,7 +182,7 @@ fn add(self: IntegralQuadratic, rhs: IntegralQuadratic) -> IntegralQuadratic {
     }
 }
 
-#[opimps::impl_ops(std::ops::Add)]
+#[opimps::impl_ops(Add)]
 #[inline]
 fn add(self: IntegralQuadratic, rhs: i64) -> IntegralQuadratic {
     IntegralQuadratic {
@@ -190,7 +192,7 @@ fn add(self: IntegralQuadratic, rhs: i64) -> IntegralQuadratic {
     }
 }
 
-#[opimps::impl_ops(std::ops::Sub)]
+#[opimps::impl_ops(Sub)]
 fn sub(self: IntegralQuadratic, rhs: IntegralQuadratic) -> IntegralQuadratic {
     if self.is_zero() {
         -rhs
@@ -207,7 +209,7 @@ fn sub(self: IntegralQuadratic, rhs: IntegralQuadratic) -> IntegralQuadratic {
     }
 }
 
-#[opimps::impl_ops(std::ops::Sub)]
+#[opimps::impl_ops(Sub)]
 #[inline]
 fn sub(self: IntegralQuadratic, rhs: i64) -> IntegralQuadratic {
     IntegralQuadratic {
@@ -217,7 +219,7 @@ fn sub(self: IntegralQuadratic, rhs: i64) -> IntegralQuadratic {
     }
 }
 
-#[opimps::impl_ops(std::ops::Mul)]
+#[opimps::impl_ops(Mul)]
 fn mul(self: IntegralQuadratic, rhs: IntegralQuadratic) -> IntegralQuadratic {
     let mut integral_part = self.integral_part * rhs.integral_part;
     if integral_part == 0 {
@@ -251,7 +253,7 @@ fn mul(self: IntegralQuadratic, rhs: IntegralQuadratic) -> IntegralQuadratic {
     }
 }
 
-#[opimps::impl_ops(std::ops::Mul)]
+#[opimps::impl_ops(Mul)]
 #[inline]
 fn mul(self: IntegralQuadratic, rhs: i64) -> IntegralQuadratic {
     if rhs.is_zero() {
@@ -265,7 +267,7 @@ fn mul(self: IntegralQuadratic, rhs: i64) -> IntegralQuadratic {
     }
 }
 
-#[opimps::impl_ops(std::ops::Div)]
+#[opimps::impl_ops(Div)]
 fn div(self: IntegralQuadratic, rhs: IntegralQuadratic) -> IntegralQuadratic {
     let mut integral_part = self.integral_part / rhs.integral_part;
     if integral_part.is_zero() {
@@ -298,7 +300,7 @@ fn div(self: IntegralQuadratic, rhs: IntegralQuadratic) -> IntegralQuadratic {
     }
 }
 
-#[opimps::impl_ops(std::ops::Div)]
+#[opimps::impl_ops(Div)]
 #[inline]
 fn div(self: IntegralQuadratic, rhs: i64) -> IntegralQuadratic {
     IntegralQuadratic {
@@ -308,7 +310,7 @@ fn div(self: IntegralQuadratic, rhs: i64) -> IntegralQuadratic {
     }
 }
 
-#[opimps::impl_ops(std::ops::Rem)]
+#[opimps::impl_ops(Rem)]
 #[inline]
 fn rem(self: IntegralQuadratic, _rhs: IntegralQuadratic) -> IntegralQuadratic {
     IntegralQuadratic::zero()

@@ -36,7 +36,7 @@ impl<T: Number> Solver<T> {
     }
 
     #[inline]
-    pub(crate) fn clone_non_pregressive_from(&mut self, source: &Self) {
+    pub(crate) fn clone_non_progressive_from(&mut self, source: &Self) {
         self.clone_from(source);
         self.progressive = false;
     }
@@ -46,15 +46,16 @@ impl<T: Number> Solver<T> {
         target: T,
         max_depth: Option<usize>,
     ) -> Option<(Rc<Expression>, usize)> {
+        let max_depth = max_depth.unwrap_or(usize::MAX);
         self.target = target;
         if let Some((expression, digits)) = self.states.get(&self.target) {
-            return if max_depth.unwrap_or(usize::MAX) >= *digits {
+            return if max_depth >= *digits {
                 Some((expression.clone(), *digits))
             } else {
                 None
             };
         }
-        for digits in (self.depth_searched + 1)..=max_depth.unwrap_or(usize::MAX) {
+        for digits in (self.depth_searched + 1)..=max_depth {
             if self.search(digits) {
                 return Some(self.states.get(&self.target)?.clone());
             }

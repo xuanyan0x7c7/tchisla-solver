@@ -38,14 +38,13 @@ struct Solution {
 }
 
 fn _serialize_output(solution: Option<(Rc<Expression>, usize)>) -> JsValue {
-    if let Some((expression, digits)) = solution {
-        serde_wasm_bindgen::to_value(&Solution {
+    match solution {
+        Some((expression, digits)) => serde_wasm_bindgen::to_value(&Solution {
             digits,
             expression: expression.to_latex_string(),
         })
-        .unwrap()
-    } else {
-        JsValue::NULL
+        .unwrap(),
+        None => JsValue::NULL,
     }
 }
 

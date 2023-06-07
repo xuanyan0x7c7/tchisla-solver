@@ -14,7 +14,7 @@ enum ProgressiveSearchState {
 
 pub struct ProgressiveSolver {
     target: i64,
-    max_depth: Option<usize>,
+    max_depth: usize,
     integral_solver: Solver<i64>,
     full_integral_solver: Solver<i64>,
     rational_solver: Solver<Rational64>,
@@ -35,7 +35,7 @@ impl ProgressiveSolver {
     ) -> Self {
         Self {
             target,
-            max_depth,
+            max_depth: max_depth.unwrap_or(usize::MAX),
             integral_solver: Solver::<i64>::new_progressive(n, integral_limits),
             full_integral_solver: Solver::<i64>::new(n, integral_limits),
             rational_solver: Solver::<Rational64>::new_progressive(n, rational_limits),
@@ -63,10 +63,10 @@ impl ProgressiveSolver {
     }
 
     pub(crate) fn solve_next(&mut self) -> Option<(Rc<Expression>, usize)> {
-        for digits in self.depth_searched + 1..=self.max_depth.unwrap_or(usize::MAX) {
+        for digits in self.depth_searched + 1..=self.max_depth {
             if self.search(digits) {
                 let solution = self.get_solution(&self.target)?.clone();
-                self.max_depth = Some(solution.1 - 1);
+                self.max_depth = solution.1 - 1;
                 return Some(solution);
             }
         }
@@ -96,12 +96,12 @@ impl ProgressiveSolver {
         }
         if let ProgressiveSearchState::FullIntegral = self.search_state {
             let mut found = false;
-            if digits >= 3 && digits < self.max_depth.unwrap_or(usize::MAX) {
+            if digits >= 3 && digits < self.max_depth {
                 self.full_integral_solver
-                    .clone_non_pregressive_from(&self.integral_solver);
+                    .clone_non_progressive_from(&self.integral_solver);
                 found = self
                     .full_integral_solver
-                    .solve(self.target, self.max_depth)
+                    .solve(self.target, Some(self.max_depth))
                     .is_some();
             }
             self.search_state = ProgressiveSearchState::Rational;
