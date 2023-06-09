@@ -1,6 +1,5 @@
 use super::Solver;
-use crate::{IntegralQuadratic, Number, RationalQuadratic};
-use num::rational::Rational64;
+use crate::{IntegralQuadratic, Number, Rational, RationalQuadratic};
 
 pub(super) trait RangeCheck<T: Number> {
     fn range_check(&self, _x: &T) -> bool;
@@ -19,10 +18,11 @@ impl RangeCheck<i64> for Solver<i64> {
     }
 }
 
-impl RangeCheck<Rational64> for Solver<Rational64> {
+impl RangeCheck<Rational> for Solver<Rational> {
     #[inline]
-    fn range_check(&self, x: &Rational64) -> bool {
-        *x.numer() <= 1 << self.limits.max_digits && *x.denom() <= 1 << self.limits.max_digits
+    fn range_check(&self, x: &Rational) -> bool {
+        x.numerator() <= 1 << self.limits.max_digits
+            && x.denominator() <= 1 << self.limits.max_digits
     }
 }
 
@@ -37,8 +37,8 @@ impl RangeCheck<IntegralQuadratic> for Solver<IntegralQuadratic> {
 impl RangeCheck<RationalQuadratic> for Solver<RationalQuadratic> {
     #[inline]
     fn range_check(&self, x: &RationalQuadratic) -> bool {
-        *x.rational_part().numer() <= 1 << self.limits.max_digits
-            && *x.rational_part().denom() <= 1 << self.limits.max_digits
+        x.rational_part().numerator() <= 1 << self.limits.max_digits
+            && x.rational_part().denominator() <= 1 << self.limits.max_digits
             && x.quadratic_power() <= self.limits.max_quadratic_power
     }
 }

@@ -1,4 +1,4 @@
-use num::rational::Rational64;
+use crate::Rational;
 use num::{Num, Signed};
 use std::fmt::Display;
 use std::hash::Hash;
@@ -27,11 +27,11 @@ impl Number for i64 {
     }
 }
 
-impl Number for Rational64 {
+impl Number for Rational {
     #[inline]
     fn to_int(self) -> Option<i64> {
         if self.is_integer() {
-            Some(*self.numer())
+            Some(self.numerator())
         } else {
             None
         }

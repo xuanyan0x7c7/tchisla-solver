@@ -1,5 +1,4 @@
 use crate::*;
-use num::rational::Rational64;
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -81,7 +80,7 @@ pub fn _solve_rational(n: i32, target: i32, config: JsValue) -> JsValue {
         },
     );
     _serialize_output(solver.solve(
-        Rational64::from(target as i64),
+        Rational::from(target as i64),
         if config.max_depth == 0 {
             None
         } else {

@@ -1,6 +1,5 @@
 use super::{Limits, Solver};
-use crate::{Expression, Number, RationalQuadratic};
-use num::rational::Rational64;
+use crate::{Expression, Number, Rational, RationalQuadratic};
 use std::rc::Rc;
 
 enum ReusableSearchState {
@@ -14,7 +13,7 @@ enum ReusableSearchState {
 pub struct ReusableSolver {
     target: i64,
     integral_solver: Solver<i64>,
-    rational_solver: Solver<Rational64>,
+    rational_solver: Solver<Rational>,
     rational_quadratic_solver: Solver<RationalQuadratic>,
     depth_searched: usize,
     search_state: ReusableSearchState,
@@ -30,7 +29,7 @@ impl ReusableSolver {
         Self {
             target: 0,
             integral_solver: Solver::<i64>::new_progressive(n, integral_limits),
-            rational_solver: Solver::<Rational64>::new_progressive(n, rational_limits),
+            rational_solver: Solver::<Rational>::new_progressive(n, rational_limits),
             rational_quadratic_solver: Solver::<RationalQuadratic>::new_progressive(
                 n,
                 quadratic_limits,

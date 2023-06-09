@@ -1,7 +1,6 @@
 use super::{Solver, State};
 use crate::number_theory::{factorial, try_sqrt};
-use crate::{Expression, IntegralQuadratic, Number, RationalQuadratic};
-use num::rational::Rational64;
+use crate::{Expression, IntegralQuadratic, Number, Rational, RationalQuadratic};
 use num::traits::Inv;
 use std::cmp::Ordering;
 use std::rc::Rc;
@@ -148,11 +147,11 @@ impl UnaryOperation<i64> for Solver<i64> {
     }
 }
 
-impl UnaryOperation<Rational64> for Solver<Rational64> {
-    fn sqrt(&mut self, x: &State<Rational64>) -> bool {
-        if let Some(p) = try_sqrt(*x.number.numer()) {
-            if let Some(q) = try_sqrt(*x.number.denom()) {
-                return self.try_insert(Rational64::new_raw(p, q), x.digits, || {
+impl UnaryOperation<Rational> for Solver<Rational> {
+    fn sqrt(&mut self, x: &State<Rational>) -> bool {
+        if let Some(p) = try_sqrt(x.number.numerator()) {
+            if let Some(q) = try_sqrt(x.number.denominator()) {
+                return self.try_insert(Rational::new_raw(p, q), x.digits, || {
                     Expression::from_sqrt(x.expression.clone(), 1)
                 });
             }
@@ -162,13 +161,13 @@ impl UnaryOperation<Rational64> for Solver<Rational64> {
 
     fn division_diff_one(
         &mut self,
-        x: Rational64,
+        x: Rational,
         digits: usize,
         numerator: Rc<Expression>,
         denominator: Rc<Expression>,
     ) -> bool {
         let mut found = false;
-        match x.numer().cmp(x.denom()) {
+        match x.numerator().cmp(&x.denominator()) {
             Ordering::Less => {
                 let result = -(x - 1);
                 if self.try_insert(result, digits, || {
@@ -295,7 +294,11 @@ impl UnaryOperation<RationalQuadratic> for Solver<RationalQuadratic> {
         denominator: Rc<Expression>,
     ) -> bool {
         let mut found = false;
-        match x.rational_part().numer().cmp(x.rational_part().denom()) {
+        match x
+            .rational_part()
+            .numerator()
+            .cmp(&x.rational_part().denominator())
+        {
             Ordering::Less => {
                 let result = -(x - 1);
                 if self.try_insert(result, digits, || {

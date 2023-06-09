@@ -1,8 +1,7 @@
 use super::{Solver, State};
 use crate::number_theory::factorial_divide;
 use crate::quadratic::PRIMES;
-use crate::{Expression, IntegralQuadratic, Number, RationalQuadratic};
-use num::rational::Rational64;
+use crate::{Expression, IntegralQuadratic, Number, Rational, RationalQuadratic};
 use num::traits::{Inv, Pow};
 use num::One;
 
@@ -17,10 +16,10 @@ impl Digits for i64 {
     }
 }
 
-impl Digits for Rational64 {
+impl Digits for Rational {
     #[inline]
     fn digits(&self) -> f64 {
-        f64::max(self.numer().digits(), self.denom().digits())
+        f64::max(self.numerator().digits(), self.denominator().digits())
     }
 }
 
@@ -220,8 +219,8 @@ impl BinaryOperation<i64> for Solver<i64> {
     }
 }
 
-impl BinaryOperation<Rational64> for Solver<Rational64> {
-    fn binary_operation(&mut self, x: State<Rational64>, y: State<Rational64>) -> bool {
+impl BinaryOperation<Rational> for Solver<Rational> {
+    fn binary_operation(&mut self, x: State<Rational>, y: State<Rational>) -> bool {
         let mut found = false;
         if self.divide(&x, &y) {
             found = true;
@@ -249,10 +248,10 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         found
     }
 
-    fn divide(&mut self, x: &State<Rational64>, y: &State<Rational64>) -> bool {
+    fn divide(&mut self, x: &State<Rational>, y: &State<Rational>) -> bool {
         if x.number == y.number {
             return if x.number.to_int() == Some(self.n) {
-                self.try_insert(Rational64::one(), 2, || {
+                self.try_insert(Rational::one(), 2, || {
                     Expression::from_divide(x.expression.clone(), x.expression.clone())
                 })
             } else {
@@ -278,12 +277,12 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         found
     }
 
-    fn power(&mut self, x: &State<Rational64>, y: &State<Rational64>) -> bool {
-        if x.number.is_one() || y.number.is_one() || *y.number.numer() > 0x40000000 {
+    fn power(&mut self, x: &State<Rational>, y: &State<Rational>) -> bool {
+        if x.number.is_one() || y.number.is_one() || y.number.numerator() > 0x40000000 {
             return false;
         }
         let x_digits = x.number.digits();
-        let mut exponent = *y.number.numer() as i32;
+        let mut exponent = y.number.numerator() as i32;
         let mut sqrt_order = 0usize;
         while x_digits * exponent as f64 > self.limits.max_digits as f64 {
             if exponent % 2 == 0 {
@@ -319,12 +318,12 @@ impl BinaryOperation<Rational64> for Solver<Rational64> {
         found
     }
 
-    fn factorial_divide(&mut self, x: &State<Rational64>, y: &State<Rational64>) -> bool {
+    fn factorial_divide(&mut self, x: &State<Rational>, y: &State<Rational>) -> bool {
         if x.number == y.number {
             return false;
         }
-        let mut x_int = *x.number.numer();
-        let mut y_int = *y.number.numer();
+        let mut x_int = x.number.numerator();
+        let mut y_int = y.number.numerator();
         let mut x = x;
         let mut y = y;
         if x_int < y_int {

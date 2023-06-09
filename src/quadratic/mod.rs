@@ -1,4 +1,4 @@
-use num::rational::Rational64;
+use crate::Rational;
 
 mod integral;
 mod rational;
@@ -14,7 +14,7 @@ pub struct IntegralQuadratic {
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct RationalQuadratic {
-    rational_part: Rational64,
+    rational_part: Rational,
     quadratic_part: [u8; PRIMES.len()],
     quadratic_power: u8,
 }
