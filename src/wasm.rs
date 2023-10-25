@@ -110,8 +110,8 @@ pub fn _solve_integral_quadratic(n: i32, target: i32, config: JsValue) -> JsValu
     ))
 }
 
-#[wasm_bindgen(js_name = solveRatinoalQuadratic)]
-pub fn _solve_ratinoal_quadratic(n: i32, target: i32, config: JsValue) -> JsValue {
+#[wasm_bindgen(js_name = solveRationalQuadratic)]
+pub fn _solve_rational_quadratic(n: i32, target: i32, config: JsValue) -> JsValue {
     let config: QuadraticConfig = serde_wasm_bindgen::from_value(config).unwrap();
     let mut solver = Solver::new(
         n as i64,
