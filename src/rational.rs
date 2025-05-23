@@ -1,9 +1,10 @@
-use num::traits::{Inv, Pow};
-use num::{Num, One, Signed, Zero};
-use std::fmt;
+use std::fmt::Display;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
+
+use num::traits::{Inv, Pow};
+use num::{Num, One, Signed, Zero};
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Rational {
@@ -14,7 +15,7 @@ pub struct Rational {
 impl Rational {
     #[inline]
     pub fn new_raw(numerator: i64, denominator: i64) -> Self {
-        Self {
+        Rational {
             numerator,
             denominator,
         }
@@ -22,7 +23,7 @@ impl Rational {
 
     #[inline]
     pub fn new(numerator: i64, denominator: i64) -> Self {
-        Self {
+        Rational {
             numerator,
             denominator,
         }
@@ -47,7 +48,10 @@ impl Rational {
 
 impl Signed for Rational {
     fn abs(&self) -> Self {
-        Self::new_raw(self.numerator.abs(), self.denominator)
+        Rational {
+            numerator: self.numerator.abs(),
+            denominator: self.denominator,
+        }
     }
 
     fn abs_sub(&self, other: &Self) -> Self {
@@ -55,7 +59,10 @@ impl Signed for Rational {
     }
 
     fn signum(&self) -> Self {
-        Self::new_raw(self.numerator.signum(), 1)
+        Rational {
+            numerator: self.numerator.signum(),
+            denominator: 1,
+        }
     }
 
     fn is_positive(&self) -> bool {
@@ -69,12 +76,15 @@ impl Signed for Rational {
 
 impl From<i64> for Rational {
     fn from(value: i64) -> Self {
-        Self::new_raw(value, 1)
+        Rational {
+            numerator: value,
+            denominator: 1,
+        }
     }
 }
 
-impl fmt::Display for Rational {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Display for Rational {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.denominator == 1 {
             write!(f, "{}", self.numerator)
         } else {
@@ -95,7 +105,10 @@ impl Num for Rational {
 
 impl Zero for Rational {
     fn zero() -> Self {
-        Self::new_raw(0, 1)
+        Rational {
+            numerator: 0,
+            denominator: 1,
+        }
     }
 
     fn is_zero(&self) -> bool {
@@ -105,7 +118,10 @@ impl Zero for Rational {
 
 impl One for Rational {
     fn one() -> Self {
-        Self::new_raw(1, 1)
+        Rational {
+            numerator: 1,
+            denominator: 1,
+        }
     }
 
     fn is_one(&self) -> bool {
@@ -134,9 +150,15 @@ impl Rational {
         let numerator = self.numerator / g;
         let denominator = self.denominator / g;
         if denominator > 0 {
-            Self::new_raw(numerator, denominator)
+            Rational {
+                numerator,
+                denominator,
+            }
         } else {
-            Self::new_raw(-numerator, -denominator)
+            Rational {
+                numerator: -numerator,
+                denominator: -denominator,
+            }
         }
     }
 }
@@ -162,7 +184,10 @@ fn add(self: Rational, rhs: Rational) -> Rational {
 #[opimps::impl_ops(Add)]
 #[inline]
 fn add(self: Rational, rhs: i64) -> Rational {
-    Rational::new_raw(self.numerator + self.denominator * rhs, self.denominator)
+    Rational {
+        numerator: self.numerator + self.denominator * rhs,
+        denominator: self.denominator,
+    }
 }
 
 impl AddAssign for Rational {
@@ -205,7 +230,10 @@ fn sub(self: Rational, rhs: Rational) -> Rational {
 #[opimps::impl_ops(Sub)]
 #[inline]
 fn sub(self: Rational, rhs: i64) -> Rational {
-    Rational::new_raw(self.numerator - self.denominator * rhs, self.denominator)
+    Rational {
+        numerator: self.numerator - self.denominator * rhs,
+        denominator: self.denominator,
+    }
 }
 
 impl SubAssign for Rational {
@@ -347,9 +375,15 @@ impl Inv for Rational {
 
     fn inv(self) -> Self::Output {
         if self.numerator > 0 {
-            Rational::new_raw(self.denominator, self.numerator)
+            Rational {
+                numerator: self.denominator,
+                denominator: self.numerator,
+            }
         } else {
-            Rational::new_raw(-self.denominator, -self.numerator)
+            Rational {
+                numerator: -self.denominator,
+                denominator: -self.numerator,
+            }
         }
     }
 }
@@ -362,10 +396,10 @@ impl Pow<u32> for Rational {
         if rhs == 0 {
             Rational::one()
         } else {
-            Rational::new_raw(
-                self.numerator.pow(rhs as u32),
-                self.denominator.pow(rhs as u32),
-            )
+            Rational {
+                numerator: self.numerator.pow(rhs),
+                denominator: self.denominator.pow(rhs),
+            }
         }
     }
 }

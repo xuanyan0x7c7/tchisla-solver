@@ -32,7 +32,7 @@ impl ProgressiveSolver {
         rational_limits: Limits,
         quadratic_limits: Limits,
     ) -> Self {
-        Self {
+        ProgressiveSolver {
             target,
             max_depth: max_depth.unwrap_or(usize::MAX),
             integral_solver: Solver::<i64>::new_progressive(n, integral_limits),

@@ -1,8 +1,10 @@
-use crate::Rational;
-use num::{Num, Signed};
 use std::fmt::Display;
 use std::hash::Hash;
 use std::ops::Neg;
+
+use num::{Num, Signed};
+
+use crate::Rational;
 
 pub trait Number: Copy + Display + Eq + Hash + Num + Signed + Neg + From<i64> {
     fn to_int(self) -> Option<i64>;

@@ -1,12 +1,14 @@
-use super::{Limits, RangeCheck, SearchState, Searcher, Solver, State, UnaryOperation};
-use crate::{Expression, Number};
-use rustc_hash::FxHashMap;
 use std::rc::Rc;
 use std::slice::Iter;
 
+use rustc_hash::FxHashMap;
+
+use super::{Limits, RangeCheck, SearchState, Searcher, Solver, State, UnaryOperation};
+use crate::{Expression, Number};
+
 impl<T: Number> Solver<T> {
     pub fn new(n: i64, limits: Limits) -> Self {
-        Self {
+        Solver {
             n,
             target: T::zero(),
             states: FxHashMap::default(),
@@ -21,7 +23,7 @@ impl<T: Number> Solver<T> {
     }
 
     pub fn new_progressive(n: i64, limits: Limits) -> Self {
-        Self {
+        Solver {
             n,
             target: T::zero(),
             states: FxHashMap::default(),

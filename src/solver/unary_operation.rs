@@ -1,9 +1,11 @@
+use std::cmp::Ordering;
+use std::rc::Rc;
+
+use num::traits::Inv;
+
 use super::{Solver, State};
 use crate::number_theory::{factorial, try_sqrt};
 use crate::{Expression, IntegralQuadratic, Number, Rational, RationalQuadratic};
-use num::traits::Inv;
-use std::cmp::Ordering;
-use std::rc::Rc;
 
 fn is_single_digit(expression: &Expression) -> bool {
     match expression {

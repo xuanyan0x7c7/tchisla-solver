@@ -1,7 +1,9 @@
-use crate::*;
-use serde::{Deserialize, Serialize};
 use std::rc::Rc;
+
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
+
+use crate::*;
 
 #[derive(Deserialize, Serialize)]
 struct Config {
@@ -141,7 +143,7 @@ impl ProgressiveSolver {
     #[wasm_bindgen(constructor)]
     pub fn new(n: i32, target: i32, config: JsValue) -> Self {
         let config: ProgressiveConfig = serde_wasm_bindgen::from_value(config).unwrap();
-        Self {
+        ProgressiveSolver {
             solver: crate::ProgressiveSolver::new(
                 n as i64,
                 target as i64,

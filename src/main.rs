@@ -1,4 +1,5 @@
 use std::env;
+
 use tchisla_solver::*;
 
 fn parse_problem() -> Option<(i64, i64, bool)> {

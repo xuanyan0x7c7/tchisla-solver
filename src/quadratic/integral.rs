@@ -1,10 +1,12 @@
-use super::{IntegralQuadratic, ParseQuadraticError, PRIMES};
-use crate::number_theory::try_sqrt;
-use crate::Number;
+use std::fmt::Display;
+use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
+
 use num::traits::Pow;
 use num::{Integer, Num, One, Signed, Zero};
-use std::fmt;
-use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
+
+use super::{IntegralQuadratic, PRIMES, ParseQuadraticError};
+use crate::Number;
+use crate::number_theory::try_sqrt;
 
 impl IntegralQuadratic {
     #[inline]
@@ -23,8 +25,8 @@ impl IntegralQuadratic {
     }
 }
 
-impl fmt::Display for IntegralQuadratic {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Display for IntegralQuadratic {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.quadratic_power == 0 {
             write!(f, "{}", self.integral_part)
         } else {
@@ -53,7 +55,7 @@ impl fmt::Display for IntegralQuadratic {
 impl From<i64> for IntegralQuadratic {
     #[inline]
     fn from(x: i64) -> Self {
-        Self {
+        IntegralQuadratic {
             integral_part: x,
             quadratic_part: [0; PRIMES.len()],
             quadratic_power: 0,
@@ -93,7 +95,7 @@ impl Num for IntegralQuadratic {
 impl Zero for IntegralQuadratic {
     #[inline]
     fn zero() -> Self {
-        Self {
+        IntegralQuadratic {
             integral_part: 0,
             quadratic_part: [0; PRIMES.len()],
             quadratic_power: 0,
@@ -109,7 +111,7 @@ impl Zero for IntegralQuadratic {
 impl One for IntegralQuadratic {
     #[inline]
     fn one() -> Self {
-        Self {
+        IntegralQuadratic {
             integral_part: 1,
             quadratic_part: [0; PRIMES.len()],
             quadratic_power: 0,
@@ -146,7 +148,7 @@ impl Signed for IntegralQuadratic {
     }
 
     fn signum(&self) -> Self {
-        Self {
+        IntegralQuadratic {
             integral_part: self.integral_part.signum(),
             quadratic_part: [0; PRIMES.len()],
             quadratic_power: 0,
@@ -337,7 +339,7 @@ impl Pow<u32> for IntegralQuadratic {
             integral_part *= PRIMES[i].pow(q);
             quadratic_part[i] = r as u8;
         }
-        Self {
+        IntegralQuadratic {
             integral_part,
             quadratic_part,
             quadratic_power,
@@ -383,7 +385,7 @@ impl IntegralQuadratic {
         if quadratic_part.iter().all(|&x| x == 0) {
             quadratic_power = 0;
         }
-        Some(Self {
+        Some(IntegralQuadratic {
             integral_part,
             quadratic_part,
             quadratic_power,

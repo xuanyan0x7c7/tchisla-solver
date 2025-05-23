@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::Display;
 use std::rc::Rc;
 
 pub enum Expression {
@@ -148,14 +148,14 @@ impl Expression {
 }
 
 fn fmt_binary(
-    f: &mut fmt::Formatter,
+    f: &mut std::fmt::Formatter,
     x: &Rc<Expression>,
     y: &Rc<Expression>,
     operator: &str,
     precedence: i32,
     abelian: bool,
     rtl: bool,
-) -> fmt::Result {
+) -> std::fmt::Result {
     let lhs = if x.precedence() < precedence || (x.precedence() == precedence && rtl && !abelian) {
         format!("({x})")
     } else {
@@ -169,8 +169,8 @@ fn fmt_binary(
     write!(f, "{lhs}{operator}{rhs}")
 }
 
-impl fmt::Display for Expression {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Display for Expression {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Expression::Number(x) => write!(f, "{x}"),
             Expression::Negate(x) => {

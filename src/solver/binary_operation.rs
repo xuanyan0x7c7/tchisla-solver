@@ -1,9 +1,10 @@
+use num::One;
+use num::traits::{Inv, Pow};
+
 use super::{Solver, State};
 use crate::number_theory::factorial_divide;
 use crate::quadratic::PRIMES;
 use crate::{Expression, IntegralQuadratic, Number, Rational, RationalQuadratic};
-use num::traits::{Inv, Pow};
-use num::One;
 
 trait Digits {
     fn digits(&self) -> f64;
