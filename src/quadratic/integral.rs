@@ -1,6 +1,6 @@
-use super::{IntegralQuadratic, ParseQuadraticError, PRIMES};
-use crate::number_theory::try_sqrt;
+use super::{IntegralQuadratic, PRIMES, ParseQuadraticError};
 use crate::Number;
+use crate::number_theory::try_sqrt;
 use num::traits::Pow;
 use num::{Integer, Num, One, Signed, Zero};
 use std::fmt;

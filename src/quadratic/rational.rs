@@ -1,4 +1,4 @@
-use super::{ParseQuadraticError, RationalQuadratic, PRIMES};
+use super::{PRIMES, ParseQuadraticError, RationalQuadratic};
 use crate::number_theory::try_sqrt;
 use crate::{Number, Rational};
 use num::traits::{Inv, Pow};
